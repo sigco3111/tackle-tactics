@@ -4,6 +4,7 @@
  * Everything here hangs off the `Career` object and is driven by career.ts hooks.
  */
 import type { ClassId, GameConfig } from '../config';
+import { josa } from '../world/josa';
 import type { Rng } from '../rng';
 import type { Player } from '../types';
 import { generatePlayer } from '../world/generate';
@@ -404,7 +405,7 @@ const LETTERS: LetterDef[] = [
             });
             gem.growth = x.cfg.career.growthRange[1] + 1 + x.rng() * 1.2;
             x.c.market.unshift(gem);
-            return `맥스가 ${nationOf(gem.nation).name}에서 돌아왔습니다. ${gem.name}(${CLS_KO[gem.cls] ?? gem.cls}, ${gem.age}세)이(가) 시장에 나왔습니다. 잠재력 별 다섯 개. 서두르세요.`;
+            return `맥스가 ${nationOf(gem.nation).name}에서 돌아왔습니다. ${gem.name} 선수(${CLS_KO[gem.cls] ?? gem.cls}, ${gem.age}세)가 시장에 나왔습니다. 잠재력 별 다섯 개. 서두르세요.`;
         },
     },
     {
@@ -440,7 +441,7 @@ const LETTERS: LetterDef[] = [
         title: '우리 선수에 대한 제안',
         when: () => false,
         body: (v) =>
-            `${v.rival}이(가) ${v.p!.name} 선수를 원하며 시장가보다 높은 ${money(v.amount)}을 제시했습니다. 그쪽 스카우트는 몇 주째 관중석에 앉아 있고, 회장은 참을성이 많은 사람이 아닙니다.`,
+            `${josa(v.rival,'이')} ${v.p!.name} 선수를 원하며 시장가보다 높은 ${money(v.amount)}을 제시했습니다. 그쪽 스카우트는 몇 주째 관중석에 앉아 있고, 회장은 참을성이 많은 사람이 아닙니다.`,
         choices: (v) => [
             { label: `판매한다 (${money(v.amount)})`, hint: `${v.p!.name} 선수가 ${v.rival}(으)로 이적` },
             { label: '팔지 않는다', hint: '선수단이 감독님의 의리를 알아봄' },

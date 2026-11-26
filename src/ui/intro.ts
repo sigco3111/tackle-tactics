@@ -3,9 +3,10 @@
  * Pure text built from the match setup; MatchView renders it beside the squads on a pitch.
  */
 import type { GameConfig, TeamStyle } from '../config';
+import { josa } from '../world/josa';
 import type { Match } from '../engine/match';
 import type { TeamSide } from '../types';
-import { sizeLabel, type Conditions, type Stadium } from '../world/stadium';
+import { type Conditions, type Stadium } from '../world/stadium';
 
 export const COMMENTATORS = {
     lead: { name: '바너비 퀼', role: '중계' },
@@ -29,13 +30,13 @@ export const introText = (
     careerStory: string[] = [],
 ): IntroLine[] => {
     const [h, a] = m.state.clubs;
-    const ground = stadium ? `${stadium.name}, ${sizeLabel(stadium.size)}` : '중립 구장';
+    const ground = stadium ? stadium.name : '중립 구장';
     const crowd = stadium ? `${Math.round(stadium.capacity * stadium.fill).toLocaleString('en')}명 입장` : '소수의 열성 팬';
     const welcome = pick(
         [
             `${ground}에서 인사드립니다. ${crowd}. ${h.name} 대 ${a.name}. 저는 ${COMMENTATORS.lead.name}, 옆에는 ${COMMENTATORS.colour.name}입니다.`,
-            `${ground}에 오신 것을 환영합니다. ${h.name}이(가) ${a.name}을(를) 홈으로 맞이하고, ${crowd}. ${COMMENTATORS.lead.name}, 그리고 ${COMMENTATORS.colour.name}과 함께합니다.`,
-            `${ground}, ${h.name} 대 ${a.name}. ${crowd}. ${COMMENTATORS.lead.name}이(가) 함께하고, 옆에는 늘 그렇듯 장갑을 낀 ${COMMENTATORS.colour.name}이(가) 있습니다.`,
+            `${ground}에 오신 것을 환영합니다. ${josa(h.name,'이')} ${josa(a.name,'을')} 홈으로 맞이하고, ${crowd}. ${COMMENTATORS.lead.name}, 그리고 ${COMMENTATORS.colour.name}과 함께합니다.`,
+            `${ground}, ${h.name} 대 ${a.name}. ${crowd}. ${josa(COMMENTATORS.lead.name,'이')} 함께하고, 옆에는 늘 그렇듯 장갑을 낀 ${josa(COMMENTATORS.colour.name,'이')} 있습니다.`,
         ],
         seed,
     );
@@ -67,7 +68,7 @@ export const introText = (
               clash[`${sh}:${sa}`] ??
                   (sh === sa
                       ? `양 팀 모두 ${sh} 스타일입니다. 거울 대결, 먼저 눈 깜빡이는 쪽이 집니다.`
-                      : `${h.name}은(는) ${sh}, ${a.name}은(는) ${sa}. 어느 한쪽은 무너져야 합니다.`),
+                      : `${josa(h.name,'은')} ${sh}, ${josa(a.name,'은')} ${sa}. 어느 한쪽은 무너져야 합니다.`),
               conditions && conditions.time !== 'day'
                   ? conditions.time === 'night'
                       ? '오늘 밤은 조명 아래에서 치러집니다.'

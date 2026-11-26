@@ -14,6 +14,7 @@ import { allTracks, nowPlaying, radio, STATION, trackKey } from './radio';
 import { addSongs, musicFolder, myTracks, openMusicFolder, removeSong, rescan, SONG_EXTS } from './myMusic';
 import { audio } from './audio';
 import { CONTROL_MODES, FONTS, prefs, setPref, UI_SCALES, type AiSpeed } from './prefs';
+import { josa } from '../world/josa';
 
 /** The match options shared by quick matches, new careers and a running career. */
 export type MatchOpts = { timerSeconds: number; rounds: number; difficulty: Difficulty; timeoutPolicy: TimeoutPolicy };
@@ -397,7 +398,7 @@ export const SettingsModal = (props: SettingsProps) => {
                     if (
                         await props.confirm({
                             title: '이 커리어를 삭제할까요?',
-                            body: `“${c.name}” 은(는) 현재 저장 슬롯에서 삭제됩니다.`,
+                            body: `${josa(`“${c.name}”`, '은')} 현재 저장 슬롯에서 삭제됩니다.`,
                             action: '커리어 삭제',
                         })
                     )

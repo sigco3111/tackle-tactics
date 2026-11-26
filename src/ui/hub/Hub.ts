@@ -3,6 +3,7 @@
  * `changed()`, which publishes the new version of the model and autosaves.
  */
 import { combined, derived, grain, type WritableGrain } from '@grainular/grains';
+import { josa } from '../../world/josa';
 import { GroundEditor } from '../GroundEditor';
 import { NATION_IDS, NATIONS, nationOf, type NationId } from '../../world/nations';
 import { leagueName, leagueShort } from '../../world/leagues';
@@ -584,7 +585,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const roundView = derived(combined([activeRound, rounds]), ([index, dates]) => {
             const round = dates[index];
             if (!round)
-                return html`<p class="muted">${which() === 'intl' ? `이번 시즌에는 ${INTL_CUP_NAME}이(가) 없습니다.` : '컵 대회는 다음 시즌에 시작합니다.'}</p>`;
+                return html`<p class="muted">${which() === 'intl' ? `이번 시즌에는 ${josa(INTL_CUP_NAME,'이')} 없습니다.` : '컵 대회는 다음 시즌에 시작합니다.'}</p>`;
             return html`<h4>${round.label} · ${String(round.day)}일차</h4>
                 ${
                     round.fixtures.length
@@ -721,7 +722,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                   if (
                       !(await actions.confirm({
                           title: `${p.name} 선수를 판매할까요?`,
-                          body: `원하는 클럽이 ${money(salePrice(cfg, p))}을(를) 지불하고 선수를 데려갑니다.`,
+                          body: `원하는 클럽이 선수를 데려갑니다. 지불액: ${money(salePrice(cfg, p))}.`,
                           action: '선수 판매',
                       }))
                   )
@@ -1168,7 +1169,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const selectedPlan = read(() => prep.plan);
         const selectedTalk = read(() => prep.talk);
         const counter = derived(selectedPlan, (plan) =>
-            COUNTERS[plan] ? `. ${cfg.ai.styles[plan].label}은(는) ${cfg.ai.styles[COUNTERS[plan]!].label}에 강합니다` : '',
+            COUNTERS[plan] ? `. ${josa(cfg.ai.styles[plan].label,'은')} ${cfg.ai.styles[COUNTERS[plan]!].label}에 강합니다` : '',
         );
         return Dialog({
             label: '경기 준비',

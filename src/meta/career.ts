@@ -4,6 +4,7 @@
  * and persists the `Career` object.
  */
 import type { ClassId, Difficulty, GameConfig, TimeoutPolicy } from '../config';
+import { josa } from '../world/josa';
 import { deleteSave, readSave, writeSave } from './storage';
 import { classLevel, perkDef, pickPerk, type PerkId } from '../engine/abilities';
 import { createRng, type Rng } from '../rng';
@@ -674,7 +675,7 @@ const finishCupRound = (cfg: GameConfig, c: Career, rng: Rng, round: CupRound) =
         const bonus = cup.key === 'intl' ? cfg.career.intlWinnerBonus : cfg.career.cupWinnerBonus;
         if (won) book(c, `${cup.name} 우승`, cfg.career.matchFee[userClub(c).tier]! * bonus);
         const champ = c.clubs[cup.champion]!;
-        news(c, `${champ.name}${cup.key === 'intl' ? ` (${NATIONS[champ.nation].name})` : ''}이(가) ${cup.name}에서 우승했습니다!`, won ? 'good' : 'info');
+        news(c, `${josa(`${champ.name}${cup.key === 'intl' ? ` (${NATIONS[champ.nation].name})` : ''}`, '이')} ${cup.name}에서 우승했습니다!`, won ? 'good' : 'info');
     }
     const fixture = next && fixtureForClub(next.fixtures, c.userClubId);
     if (fixture) {
@@ -790,7 +791,7 @@ export const chooseLevelUp = (cfg: GameConfig, c: Career, playerId: string, cls:
     if (!levelUp(cfg, rng, p, cls)) return null;
     saveRng(c, rng);
     const text = isNew
-        ? `${p.name} 선수가 새 포지션 ${cfg.classes[cls].label}을(를) 익혔습니다!`
+        ? `${p.name} 선수가 새 포지션 ${josa(cfg.classes[cls].label,'을')} 익혔습니다!`
         : `${p.name} 선수가 ${cfg.classes[cls].short} ${classLevel(p, cls)}에 도달했습니다.`;
     news(c, text, 'good');
     if (isNew)
@@ -977,7 +978,7 @@ export const endSeason = (cfg: GameConfig, c: Career): SeasonCeremony => {
                     [17, 19],
                 );
                 club.squad.push(p);
-                summary.push(`선수단을 채우기 위해 아카데미 테스트 선수 ${p.name}(${cfg.classes[p.cls].short})이(가) 합류합니다.`);
+                summary.push(`선수단을 채우기 위해 아카데미 테스트 선수 ${p.name}(${cfg.classes[p.cls].short})가 합류합니다.`);
             }
         } else {
             for (const [cls, count] of Object.entries(cfg.career.squadMake) as Array<[ClassId, number]>) {
@@ -1118,7 +1119,7 @@ const aiShop = (
     restock(cfg, c, rng, club, fit);
     if (seller) restock(cfg, c, rng, seller, fit);
     tell(
-        `${club.name}이(가) ${p.name}(${cfg.classes[p.cls].short}) 선수를 ${seller ? `${seller.name}에서` : '자유 계약으로'} ${money(price)}에 영입했습니다.`,
+        `${josa(club.name,'이')} ${p.name}(${cfg.classes[p.cls].short}) 선수를 ${seller ? `${seller.name}에서` : '자유 계약으로'} ${money(price)}에 영입했습니다.`,
         seller,
     );
 };
@@ -1345,7 +1346,7 @@ export const expandGround = (cfg: GameConfig, c: Career): string | null => {
     const st = stadiumOf(c, u);
     book(c, `경기장 확장: ${sizeLabel(up.size).toLowerCase()}`, -up.cost);
     u.stadium = { ...st, size: up.size, capacity: up.capacity };
-    news(c, `${st.name}이(가) ${sizeLabel(up.size).toLowerCase()} 규모가 되었습니다: ${up.capacity.toLocaleString('en')}석.`, 'good');
+    news(c, `${josa(st.name,'이')} ${sizeLabel(up.size).toLowerCase()} 규모가 되었습니다: ${up.capacity.toLocaleString('en')}석.`, 'good');
     return null;
 };
 /** Change how the ground looks (name, mowing, pitch, flags): free, any time. */

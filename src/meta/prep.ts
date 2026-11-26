@@ -5,6 +5,7 @@
  * rival raise the stakes both ways.
  */
 import type { GameConfig, TeamStyle } from '../config';
+import { josa } from '../world/josa';
 import { NATIONS } from '../world/nations';
 import { leagueName } from '../world/leagues';
 import { styleOf } from '../ai/brain';
@@ -115,8 +116,8 @@ export const storyLines = (cfg: GameConfig, c: Career, f: Fixture, p: Prep): str
         const round = cup?.rounds[f.round];
         const where =
             cup?.key === 'intl'
-                ? `${opp.name}은(는) ${NATIONS[opp.nation].adjective} 1부 리그 상대입니다.`
-                : `${opp.name}은(는) ${leagueName(opp.nation, opp.tier)} 소속입니다.`;
+                ? `${josa(opp.name,'은')} ${NATIONS[opp.nation].adjective} 1부 리그 상대입니다.`
+                : `${josa(opp.name,'은')} ${leagueName(opp.nation, opp.tier)} 소속입니다.`;
         lines.push(`${cup?.name ?? CUP_NAME}${round ? ` · ${round.label}` : ''}. ${where} 무승부면 승부차기입니다.`);
     } else if (div) {
         const rows = table(div);
