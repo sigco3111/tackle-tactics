@@ -86,7 +86,7 @@ describe('career', () => {
         );
         const schedule = seasonSchedule(cfg, c);
         expect(schedule.filter((date) => !date.cup).map((date) => date.round)).toEqual(Array.from({ length: 18 }, (_, i) => i));
-        // six domestic and five international cup dates sit between the 18 league matchdays
+        // six domestic and six international cup dates sit between the 18 league matchdays
         const cupDays = schedule.filter((date) => date.cup).map((date) => date.day);
         expect(cupDays).toHaveLength(c.cup!.rounds.length + c.intl!.rounds.length);
         // 17 nations send two clubs each: 34 clubs, so a preliminary round trims the field to 32
@@ -95,7 +95,7 @@ describe('career', () => {
         expect(cupDays.every((d) => (d - 1) % cfg.career.daysPerMatchday === 0)).toBe(true);
         // the domestic final closes the season
         expect(schedule.at(-1)!.cup).toBe(c.cup!.rounds.at(-1));
-        expect(seasonDays(cfg, c)).toBe((18 + 6 + 5) * cfg.career.daysPerMatchday);
+        expect(seasonDays(cfg, c)).toBe((18 + 6 + 6) * cfg.career.daysPerMatchday);
     });
 
     it('decides a drawn cup tie on penalties and draws the next round without changing the league', () => {
