@@ -58,9 +58,9 @@ const byMe = (ev: MatchEvent[], p: Piece, t: MatchEvent['t']) => ev.filter((e) =
 export const LESSONS: Lesson[] = [
     {
         id: 'move',
-        title: 'Find space',
+        title: '공간 찾기',
         text: (k) =>
-            `This is ${k.me.player.name}. Blue squares are everywhere they can run this turn — click one. Red hatching marks opponents' zones of control: an off-ball run stops the moment it steps into one.`,
+            `${k.me.player.name} 선수입니다. 파란 칸은 이번 턴에 달릴 수 있는 모든 곳이니 하나를 클릭하세요. 붉은 빗금은 상대의 압박 구역이며, 공 없이 달리다가 이 구역에 들어서면 그 자리에서 멈춥니다.`,
         stage: (m, k) => {
             reset(m);
             put(m, k.mate, { x: 24, y: 14 });
@@ -68,14 +68,14 @@ export const LESSONS: Lesson[] = [
             put(m, k.me, { x: 18, y: 9 });
             return k.me;
         },
-        done: (ev, _m, k) => (ev.some((e) => e.t === 'move' && e.id === k.me.id) ? true : 'Click one of the blue squares to make a run.'),
-        praise: 'Good. Every player moves once per round, then may act.',
+        done: (ev, _m, k) => (ev.some((e) => e.t === 'move' && e.id === k.me.id) ? true : '파란 칸 중 하나를 클릭해서 달려 보세요.'),
+        praise: '좋아요. 모든 선수는 라운드마다 한 번 움직이고, 그다음 행동할 수 있습니다.',
     },
     {
         id: 'pass',
-        title: 'Pass it on',
+        title: '패스하기',
         text: (k) =>
-            `${k.me.player.name} has the ball. Each turn is two steps: Move, then Act. Press Space to stay put, then click ${k.mate.player.name} to pass. The orange ring shows where the ball may land — longer passes spread wider, and defenders next to the lane can cut it out.`,
+            `${k.me.player.name} 선수가 공을 가지고 있습니다. 한 턴은 이동, 행동의 두 단계입니다. 스페이스를 눌러 제자리에 머문 뒤 ${k.mate.player.name} 선수를 클릭해 패스하세요. 주황색 원은 공이 떨어질 수 있는 범위를 보여 줍니다. 긴 패스일수록 범위가 넓어지고, 패스 길 옆의 수비수가 끊어낼 수 있습니다.`,
         stage: (m, k) => {
             reset(m);
             put(m, k.me, { x: 18, y: 14 });
@@ -84,19 +84,19 @@ export const LESSONS: Lesson[] = [
             return k.me;
         },
         done: (ev, m, k) => {
-            if (!byMe(ev, k.me, 'kick').length) return 'Stay put with Space, then click a teammate to pass.';
+            if (!byMe(ev, k.me, 'kick').length) return '스페이스로 제자리에 머문 뒤, 동료를 클릭해 패스하세요.';
             const r = ev.find((e) => e.t === 'receive');
             return r && r.t === 'receive' && m.piece(r.by).team === 0
                 ? true
-                : 'Lost it! A shorter pass to a teammate with nobody beside them is safer. Again.';
+                : '공을 빼앗겼어요! 옆에 아무도 없는 동료에게 짧게 패스하는 편이 안전합니다. 다시 해 보세요.';
         },
-        praise: 'Completed. A short pass to someone in space almost always arrives.',
+        praise: '성공입니다. 공간에 있는 선수에게 짧게 패스하면 거의 항상 도착합니다.',
     },
     {
         id: 'dribble',
-        title: 'Run with the ball',
+        title: '공 몰고 달리기',
         text: () =>
-            `Now carry it. Pink squares are next to a defender who still has a reaction ready: step on one and they get a free tackle. Dribble forward around the pink, then press Space to keep the ball.`,
+            `이번엔 공을 몰고 가 봅시다. 분홍 칸은 아직 반응 행동이 남은 수비수 옆입니다. 밟으면 공짜 태클을 허용합니다. 분홍 칸을 피해 앞으로 드리블한 다음, 스페이스를 눌러 공을 지키세요.`,
         stage: (m, k) => {
             reset(m);
             put(m, k.me, { x: 20, y: 14 });
@@ -105,16 +105,16 @@ export const LESSONS: Lesson[] = [
             return k.me;
         },
         done: (ev, _m, k) => {
-            if (ev.some((e) => e.t === 'tackle' && e.success)) return 'Tackled! Steer around the pink squares this time.';
-            return ev.some((e) => e.t === 'move' && e.id === k.me.id && e.dribble) ? true : 'Click a blue square to dribble forward.';
+            if (ev.some((e) => e.t === 'tackle' && e.success)) return '태클당했어요! 이번엔 분홍 칸을 피해서 가 보세요.';
+            return ev.some((e) => e.t === 'move' && e.id === k.me.id && e.dribble) ? true : '파란 칸을 클릭해서 앞으로 드리블하세요.';
         },
-        praise: 'Nicely done. A defender who has used their reaction is harmless until their own turn.',
+        praise: '잘했어요. 반응 행동을 이미 쓴 수비수는 자기 턴이 올 때까지 위협이 되지 않습니다.',
     },
     {
         id: 'tackle',
-        title: 'Win it back',
+        title: '공 되찾기',
         text: (k) =>
-            `${k.fwd.player.name} has the ball right next to ${k.me.player.name}. Press Space to stay, then click the carrier (or press T) to tackle. The odds come from Tackling against Dribbling — it is a dice roll, so pick your moments.`,
+            `${k.fwd.player.name} 선수가 ${k.me.player.name} 선수 바로 옆에서 공을 가지고 있습니다. 스페이스로 제자리에 머문 뒤 공을 가진 선수를 클릭(또는 T 키)해서 태클하세요. 성공 확률은 태클 능력과 드리블 능력의 대결로 정해지는 주사위 굴림이니, 타이밍을 잘 고르세요.`,
         stage: (m, k) => {
             reset(m);
             put(m, k.fwd, { x: 21, y: 14 });
@@ -122,14 +122,14 @@ export const LESSONS: Lesson[] = [
             put(m, k.me, { x: 20, y: 14 });
             return k.me;
         },
-        done: (ev, _m, k) => (byMe(ev, k.me, 'tackle').length ? true : 'Stay put, then click the carrier or press T.'),
-        praise: 'Win or lose, that is how you challenge. A miss leaves you off balance until your next turn.',
+        done: (ev, _m, k) => (byMe(ev, k.me, 'tackle').length ? true : '제자리에 머문 뒤, 공을 가진 선수를 클릭하거나 T 키를 누르세요.'),
+        praise: '이기든 지든 이렇게 맞서는 겁니다. 실패하면 다음 턴까지 자세가 무너집니다.',
     },
     {
         id: 'shoot',
-        title: 'Shoot',
+        title: '슛',
         text: (k) =>
-            `${k.me.player.name} is in range. Stay put, then click a cell inside the goal mouth. The orange band shows where the shot may go: closer and better-skilled means tighter. The keeper gets a save roll.`,
+            `${k.me.player.name} 선수가 슛 거리 안에 있습니다. 제자리에 머문 뒤 골문 안의 칸을 클릭하세요. 주황색 띠는 슛이 향할 수 있는 범위로, 가깝고 실력이 좋을수록 좁아집니다. 골키퍼에게는 선방 판정이 주어집니다.`,
         stage: (m, k) => {
             reset(m);
             put(m, k.me, { x: 40, y: 13 });
@@ -140,14 +140,14 @@ export const LESSONS: Lesson[] = [
         done: (ev, _m, k) =>
             byMe(ev, k.me, 'kick').some((e) => e.t === 'kick' && e.kind === 'shot')
                 ? true
-                : 'Click inside the goal mouth (between the posts) to shoot.',
-        praise: 'That is the whole loop: make space, move the ball, get a shot away.',
+                : '골문 안(골대 사이)을 클릭해서 슛하세요.',
+        praise: '이것이 전체 흐름입니다. 공간을 만들고, 공을 옮기고, 슛을 날리세요.',
     },
     {
         id: 'ability',
-        title: 'Abilities',
+        title: '특수 능력',
         text: (k) =>
-            `${k.runner?.player.name ?? 'This player'} has a movement ability in the dock at the bottom. Hover a card to preview it, click it (or press its number), then click a cell. Abilities recharge for a few rounds after use.`,
+            `${k.runner?.player.name ?? '이 선수'} 선수는 화면 아래 독에 이동 능력을 가지고 있습니다. 카드 위에 마우스를 올리면 미리 볼 수 있고, 클릭(또는 번호 키)한 뒤 칸을 클릭하세요. 능력은 사용 후 몇 라운드 동안 재충전됩니다.`,
         stage: (m, k) => {
             if (!k.runner) return undefined;
             reset(m);
@@ -159,14 +159,14 @@ export const LESSONS: Lesson[] = [
         done: (ev, _m, k) =>
             ev.some((e) => (e.t === 'move' && e.id === k.runner?.id && !!e.ability) || (e.t === 'ability' && e.by === k.runner?.id))
                 ? true
-                : 'Pick the ability card in the dock first, then click a highlighted cell.',
-        praise: 'Each class unlocks more abilities as players level up in the career.',
+                : '먼저 독에서 능력 카드를 고른 다음, 강조된 칸을 클릭하세요.',
+        praise: '커리어에서 선수가 레벨업하면 포지션별로 더 많은 능력이 열립니다.',
     },
     {
         id: 'corner',
-        title: 'Set pieces',
+        title: '세트피스',
         text: () =>
-            'Corner! First the setup: click one of your highlighted players, then a free cell — get runners away from their markers. Press Space when happy (the defence answers each move). Then whip it into the box: teammates within 2 of where it drops attack a header.',
+            '코너킥입니다! 먼저 배치부터 하세요. 강조된 선수를 클릭한 다음 빈 칸을 클릭해서 마크맨에게서 벗어나게 합니다. 만족하면 스페이스를 누르세요(수비도 매번 대응합니다). 그다음 박스 안으로 크로스를 올리면, 공이 떨어지는 곳에서 2칸 이내의 동료가 헤딩을 시도합니다.',
         stage: (m) => {
             reset(m);
             m.awardCorner(0, 0);
@@ -174,15 +174,15 @@ export const LESSONS: Lesson[] = [
         },
         done: (ev, m) => {
             const k = ev.find((e) => e.t === 'kick');
-            return k && k.t === 'kick' && m.piece(k.by).team === 0 ? true : 'Aim the delivery at a cell inside the box.';
+            return k && k.t === 'kick' && m.piece(k.by).team === 0 ? true : '박스 안의 칸을 겨냥해 공을 올리세요.';
         },
-        praise: 'Corners come from parries, blocks and clearances. Free kicks near the box work the same way.',
+        praise: '코너킥은 선방, 블록, 걷어내기에서 나옵니다. 박스 근처 프리킥도 같은 방식입니다.',
     },
     {
         id: 'flow',
-        title: 'How a match flows',
+        title: '경기 진행 방식',
         text: () =>
-            'Each round every player acts once, fastest first — the queue on the right shows who is next. Defenders keep one reaction per round: a tackle or interception off your turn. Players tire as they run (the bar under a tired player); press B for the bench and up to 3 substitutions. F changes which of your players ask for orders, P pauses, H opens the playbook.',
+            '매 라운드 모든 선수가 한 번씩 가장 빠른 선수부터 행동하며, 오른쪽 대기열에 다음 차례가 표시됩니다. 수비수는 라운드마다 반응 행동을 한 번 가지고 있어서, 내 턴이 아닐 때도 태클이나 인터셉트를 할 수 있습니다. 선수는 달릴수록 지칩니다(지친 선수 아래의 막대). B 키로 벤치를 열어 최대 3명까지 교체할 수 있고, F는 지시를 받을 선수 선택, P는 일시정지, H는 전술 노트를 엽니다.',
         stage: (m) => {
             reset(m);
             return null;

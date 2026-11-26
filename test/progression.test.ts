@@ -77,7 +77,7 @@ describe('progression', () => {
         const p = userClub(c).squad.find((q) => q.cls !== 'keeper')!;
         p.xp = xpToNext(cfg, p);
         const cls = levelUpOptions(p).find((x) => classLevel(p, x) === 0)!;
-        expect(chooseLevelUp(cfg, c, p.id, cls)).toMatch(/new class/);
+        expect(chooseLevelUp(cfg, c, p.id, cls)).toMatch(/새 포지션/);
         expect(classLevel(p, cls)).toBe(1);
         // reach the first tier in that class and pick from it
         p.xp = 10_000;

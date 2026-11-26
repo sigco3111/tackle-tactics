@@ -89,7 +89,7 @@ describe('career', () => {
         // six domestic and five international cup dates sit between the 18 league matchdays
         const cupDays = schedule.filter((date) => date.cup).map((date) => date.day);
         expect(cupDays).toHaveLength(c.cup!.rounds.length + c.intl!.rounds.length);
-        expect(c.intl!.rounds.map((r) => r.label)).toEqual(['Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', 'Final']);
+        expect(c.intl!.rounds.map((r) => r.label)).toEqual(['32강', '16강', '8강', '준결승', '결승']);
         expect(new Set(cupDays).size).toBe(cupDays.length);
         expect(cupDays.every((d) => (d - 1) % cfg.career.daysPerMatchday === 0)).toBe(true);
         // the domestic final closes the season
@@ -120,7 +120,7 @@ describe('career', () => {
             new Set([...opening.byes, ...opening.fixtures.map(cupWinner)]),
         );
         expect(c.news).toEqual(
-            expect.arrayContaining([expect.objectContaining({ day: opening.day, text: expect.stringContaining('on pens') })]),
+            expect.arrayContaining([expect.objectContaining({ day: opening.day, text: expect.stringContaining('승부차기') })]),
         );
     });
 
@@ -131,7 +131,7 @@ describe('career', () => {
         c.userClubId = opening.byes[0]!;
         c.day = opening.day;
         expect(today(cfg, c)).toMatchObject({ kind: 'training', cup: opening });
-        expect(trainingDay(cfg, c)?.summary).toContain('16 trained');
+        expect(trainingDay(cfg, c)?.summary).toContain('16명 훈련');
         expect(opening.fixtures.every((f) => !!cupWinner(f))).toBe(true);
 
         for (const [index, round] of cup.rounds.slice(1).entries()) {
@@ -152,7 +152,7 @@ describe('career', () => {
         expect(cup.rounds.flatMap((r) => r.fixtures)).toHaveLength(49);
         expect(cup.champion).toBeDefined();
         expect(cup.champion === c.userClubId).toBe(outcome === 'win');
-        expect(c.ledger.some((entry) => entry.label === `${CUP_NAME} winners`)).toBe(outcome === 'win');
+        expect(c.ledger.some((entry) => entry.label === `${CUP_NAME} 우승`)).toBe(outcome === 'win');
         c.day = 73;
         const award = endSeason(cfg, c).awards.find((a) => a.title === CUP_NAME);
         expect(award?.who).toBe(c.clubs[cup.champion!]!.name);
@@ -176,11 +176,11 @@ describe('career', () => {
         const before = squad.map((p) => ({ xp: p.xp, levels: { ...p.levels } }));
         const report = trainingDay(cfg, c)!;
         expect(report.summary).toMatch(
-            new RegExp(`^Tackling \\+ Reflexes · 15 trained · ${expectedXp} XP earned( · \\d+ attribute gains?)? · 1 recovering\\.$`),
+            new RegExp(`^태클 \\+ 반사신경 · 15명 훈련 · 경험치 ${expectedXp} 획득( · 능력치 \\d+개 상승)? · 1명 회복 중\\.$`),
         );
         expect(injured.injury).toBeUndefined();
         expect(injured.xp).toEqual(injuredXp);
-        expect(report.updates).toContain(`${injured.name} is fit again.`);
+        expect(report.updates).toContain(`${injured.name} 선수가 부상에서 회복했습니다.`);
         // XP goes into the player's pool; no class levels change until the manager chooses one
         for (const [i, p] of squad.slice(1).entries()) {
             expect(p.xp).toBe(before[i + 1]!.xp + expectedGains[i]!.amount);
@@ -191,7 +191,7 @@ describe('career', () => {
         for (const p of squad) p.injury = cfg.training.heal + 1;
         const rest = trainingDay(cfg, c)!;
         expect(squad.every((p) => p.injury === 1)).toBe(true);
-        expect(c.news[0]).toMatchObject({ season: c.season, day: day + 1, text: 'Recovery day. The squad rested.' });
+        expect(c.news[0]).toMatchObject({ season: c.season, day: day + 1, text: '회복일. 선수단이 쉬었습니다.' });
         expect(rest.summary).toBe(c.news[0]!.text);
         expect(c.news).toHaveLength(83);
     });
@@ -240,9 +240,9 @@ describe('career', () => {
 
     it('restores a backup file, refusing junk and older versions', () => {
         const c = newCareer(cfg, 43, settings);
-        expect(restoreCareer('not json')).toMatch(/isn't a Tackle Tactics backup/);
-        expect(restoreCareer(JSON.stringify({ hello: 1 }))).toMatch(/isn't a Tackle Tactics backup/);
-        expect(restoreCareer(JSON.stringify({ ...c, version: SAVE_VERSION - 1 }))).toMatch(/older version/);
+        expect(restoreCareer('not json')).toMatch(/백업 파일이 아닙니다/);
+        expect(restoreCareer(JSON.stringify({ hello: 1 }))).toMatch(/백업 파일이 아닙니다/);
+        expect(restoreCareer(JSON.stringify({ ...c, version: SAVE_VERSION - 1 }))).toMatch(/이전 버전/);
         expect(restoreCareer(JSON.stringify(c))).toBeNull();
         expect(loadCareer()).toEqual(c);
         expect(careerBackup()).toBe(JSON.stringify(c));

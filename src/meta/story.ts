@@ -87,7 +87,7 @@ export const rivalOf = (c: Career): CareerClub | null => {
 };
 
 export const moraleLabel = (m: number) =>
-    m >= 85 ? 'Euphoric' : m >= 70 ? 'Buoyant' : m >= 55 ? 'Settled' : m >= 40 ? 'Uneasy' : m >= 25 ? 'Low' : 'Mutinous';
+    m >= 85 ? '열광' : m >= 70 ? '활기참' : m >= 55 ? '안정' : m >= 40 ? '불안' : m >= 25 ? '저조' : '반란 직전';
 export const shiftMorale = (c: Career, d: number) => {
     const s = story(c);
     s.morale = Math.max(MORALE.min, Math.min(MORALE.max, Math.round(s.morale + d)));
@@ -160,14 +160,14 @@ const recordFixture = (c: Career, lines: Record<string, PlayerMatchLine>) => {
 
 type QuestDef = { id: string; title: string; desc: (t: number) => string; target: number; reward: number };
 const QUESTS: QuestDef[] = [
-    { id: 'streak', title: 'Hot Streak', desc: (t) => `Win ${t} league matches in a row.`, target: 3, reward: 3 },
-    { id: 'goals', title: 'Goal Rush', desc: (t) => `Score ${t} league goals this season.`, target: 12, reward: 2 },
-    { id: 'cleans', title: 'The Wall', desc: (t) => `Keep ${t} league clean sheets.`, target: 3, reward: 2.5 },
-    { id: 'bigwin', title: 'Statement Win', desc: () => 'Win a league match by three goals or more.', target: 1, reward: 2 },
-    { id: 'scorer', title: 'Talisman', desc: (t) => `Have one player score ${t} league goals.`, target: 5, reward: 2 },
-    { id: 'newclass', title: 'Jack of All Trades', desc: () => 'Train a player into a brand-new class.', target: 1, reward: 1.5 },
-    { id: 'motm', title: 'Star Turn', desc: (t) => `Win ${t} Man of the Match awards in league matches you play.`, target: 3, reward: 2 },
-    { id: 'unbeaten', title: 'Iron Will', desc: (t) => `Go ${t} league matches unbeaten.`, target: 5, reward: 3 },
+    { id: 'streak', title: '불붙은 연승', desc: (t) => `리그 ${t}연승을 달성하세요.`, target: 3, reward: 3 },
+    { id: 'goals', title: '골 폭풍', desc: (t) => `이번 시즌 리그에서 ${t}골을 넣으세요.`, target: 12, reward: 2 },
+    { id: 'cleans', title: '철옹성', desc: (t) => `리그에서 ${t}경기 무실점을 기록하세요.`, target: 3, reward: 2.5 },
+    { id: 'bigwin', title: '선언적 승리', desc: () => '리그 경기에서 3골 차 이상으로 이기세요.', target: 1, reward: 2 },
+    { id: 'scorer', title: '부적 같은 존재', desc: (t) => `한 선수가 리그에서 ${t}골을 넣게 하세요.`, target: 5, reward: 2 },
+    { id: 'newclass', title: '만능 재주꾼', desc: () => '선수를 완전히 새로운 포지션으로 키우세요.', target: 1, reward: 1.5 },
+    { id: 'motm', title: '스타의 활약', desc: (t) => `직접 플레이한 리그 경기에서 MOM을 ${t}번 받으세요.`, target: 3, reward: 2 },
+    { id: 'unbeaten', title: '강철 의지', desc: (t) => `리그 ${t}경기 연속 무패를 기록하세요.`, target: 5, reward: 3 },
 ];
 
 const newQuests = (rng: Rng): Quest[] => {
@@ -221,180 +221,181 @@ type Vars = { p: Player | null; club: string; amount: number; fee: number; rival
 type Ctx = { cfg: GameConfig; c: Career; u: CareerClub; rng: Rng; pay: (label: string, amount: number) => void };
 export type Trainee = { player: Player; cls: ClassId };
 
+const CLS_KO: Record<string, string> = { keeper: '골키퍼', defender: '수비수', midfielder: '미드필더', winger: '윙어', striker: '스트라이커' };
 const LETTERS: LetterDef[] = [
     {
         id: 'bard',
-        from: 'Odo Lutewright, Bard',
-        title: 'An anthem for the ages',
+        from: '음유시인 오도 루트라이트',
+        title: '시대를 넘는 응원가',
         when: () => true,
         body: (v) =>
-            `Esteemed manager! I have heard tales of ${v.club} and my lute aches to sing them. For a modest ${money(v.amount)} I shall compose an anthem so stirring that grown blacksmiths will weep into their aprons. Your players will march out to it every match. Decline, and, well, a bard must sing about *something*.`,
+            `존경하는 감독님! ${v.club}의 이야기를 들었더니 제 류트가 노래하고 싶어 안달입니다. 소박하게 ${money(v.amount)}만 주시면 다 큰 대장장이도 앞치마에 눈물을 쏟을 만큼 벅찬 응원가를 지어 드리지요. 선수들은 매 경기 그 곡과 함께 입장할 겁니다. 거절하시면... 음유시인도 *무언가*에 대해서는 노래해야 하니까요.`,
         choices: (v) => [
-            { label: `Commission it (${money(v.amount)})`, hint: 'Morale up a lot' },
-            { label: 'Politely decline', hint: 'Risk a mocking ballad' },
+            { label: `의뢰하기 (${money(v.amount)})`, hint: '사기 크게 상승' },
+            { label: '정중히 거절', hint: '놀림 담은 발라드 위험' },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
-                x.pay('Club anthem', -v.amount);
+                x.pay('클럽 응원가', -v.amount);
                 shiftMorale(x.c, 12);
-                return 'The new anthem echoes round the ground. The squad walks taller.';
+                return '새 응원가가 경기장에 울려 퍼집니다. 선수단의 어깨가 펴졌습니다.';
             }
             shiftMorale(x.c, -3);
             followUp(x.c, 'ballad', 4, { amount: v.amount });
-            return 'Odo has written a ballad about your "tight purse". It is catchy. Annoyingly so.';
+            return '오도가 감독님의 "짠 지갑"에 대한 발라드를 썼습니다. 귀에 착 붙습니다. 짜증날 만큼요.';
         },
     },
     {
         id: 'extra',
-        from: 'Your captain',
-        title: 'Extra sessions',
+        from: '주장',
+        title: '추가 훈련',
         when: () => true,
         training: true,
         body: (v) =>
-            `Boss, ${v.p!.name} stayed behind after today's ${v.trainingClass!} drills. They want to run them again tomorrow before the rest of the squad turns up. The physio says they've already done enough for one day.`,
+            `감독님, ${v.p!.name} 선수가 오늘 ${CLS_KO[v.trainingClass!] ?? v.trainingClass!} 훈련이 끝난 뒤에도 남아 있습니다. 내일 다른 선수들이 오기 전에 다시 하고 싶답니다. 물리치료사는 하루치로는 이미 충분하다고 합니다.`,
         choices: () => [
-            { label: 'Let them push on', hint: 'Big XP, small injury risk' },
-            { label: 'Order them to rest', hint: 'Safe, slightly deflating' },
+            { label: '계속하게 둔다', hint: '경험치 대폭, 부상 위험 약간' },
+            { label: '쉬라고 지시한다', hint: '안전하지만 약간 김빠짐' },
         ],
         resolve: (ch, v, x) => {
             const p = v.p!;
             if (ch === 1) {
                 shiftMorale(x.c, -2);
-                return `${p.name} rests, grumbling.`;
+                return `${p.name} 선수가 투덜대며 쉽니다.`;
             }
             const ready = gainXp(x.cfg, p, 90);
             if (x.rng.chance(0.22)) {
                 p.injury = Math.max(p.injury ?? 0, 3);
-                return `${p.name} overdid it: strained something, out 3 days.${ready ? ' But they earned a level-up first: choose their class in the squad.' : ''}`;
+                return `${p.name} 선수가 무리해서 어딘가를 다쳤습니다. 3일 결장.${ready ? ' 하지만 그 전에 레벨업 자격을 얻었습니다. 스쿼드에서 포지션을 고르세요.' : ''}`;
             }
             return ready
-                ? `${p.name}'s extra work pays off: they're ready to level up. Choose their class in the squad.`
-                : `${p.name} banks a heap of experience.`;
+                ? `${p.name} 선수의 추가 훈련이 결실을 맺었습니다. 레벨업 준비 완료. 스쿼드에서 포지션을 고르세요.`
+                : `${p.name} 선수가 많은 경험치를 쌓았습니다.`;
         },
     },
     {
         id: 'openTraining',
-        from: 'Your groundskeeper',
-        title: 'Open training',
+        from: '그라운드 관리인',
+        title: '공개 훈련',
         when: () => true,
         training: true,
         body: (v) =>
-            `Supporters gathered at the gates to watch today's drills. They'd love to come inside for the next one. The local guild has offered ${money(v.amount)} for a private coaching session at the same time. We only have one pitch, boss.`,
+            `서포터들이 오늘 훈련을 보러 정문에 모였습니다. 다음 훈련 때는 안으로 들어오고 싶어 합니다. 한편 지역 길드가 같은 시간에 비공개 코칭 세션을 열어 주면 ${money(v.amount)}을 내겠다고 합니다. 그런데 구장은 하나뿐입니다, 감독님.`,
         choices: (v) => [
-            { label: 'Open the gates', hint: 'The supporters lift squad morale' },
-            { label: 'Coach the guild', hint: `Earn ${money(v.amount)} for the club` },
+            { label: '문을 연다', hint: '서포터가 선수단 사기를 끌어올림' },
+            { label: '길드를 코칭한다', hint: `클럽에 ${money(v.amount)} 수입` },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
                 shiftMorale(x.c, 7);
-                return 'The supporters cheered every drill. The squad left training in high spirits.';
+                return '서포터들이 모든 드릴에 환호했습니다. 선수단은 신나게 훈련을 마쳤습니다.';
             }
-            x.pay('Guild coaching session', v.amount);
-            return `The guild paid ${money(v.amount)} for the coaching session.`;
+            x.pay('길드 코칭 세션', v.amount);
+            return `길드가 코칭 세션 대가로 ${money(v.amount)}을 지불했습니다.`;
         },
     },
     {
         id: 'trialist',
-        from: 'A muddy stranger',
-        title: 'Knock at the gate',
+        from: '진흙투성이 낯선 이',
+        title: '정문의 노크 소리',
         when: (_c, u) => u.squad.length < 20,
         body: (v) =>
-            `A youngster turned up at the training ground at dawn, boots tied round their neck, and asked for a trial. Name's ${v.p!.name}, ${v.p!.age} years old, plays ${v.p!.cls}. The lads say they've got something. Wages would be modest.`,
+            `한 젊은이가 새벽에 축구화를 목에 걸고 훈련장에 나타나 테스트를 부탁했습니다. 이름은 ${v.p!.name}, ${v.p!.age}세, 포지션은 ${CLS_KO[v.p!.cls] ?? v.p!.cls}. 선수들은 뭔가 있다고들 합니다. 주급은 소박할 겁니다.`,
         choices: (v) => [
-            { label: 'Sign them on', hint: `Free, ~${money(v.amount)}/matchday` },
-            { label: 'Send them home', hint: 'Nothing happens' },
+            { label: '영입한다', hint: `이적료 없음, 경기일당 약 ${money(v.amount)}` },
+            { label: '돌려보낸다', hint: '아무 일도 없음' },
         ],
         resolve: (ch, v, x) => {
-            if (ch === 1) return `${v.p!.name} trudges off into the rain.`;
+            if (ch === 1) return `${v.p!.name} 선수가 빗속으로 터덜터덜 걸어갑니다.`;
             const p = v.p!;
             p.number = Math.max(0, ...x.u.squad.map((q) => q.number)) + 1;
             x.u.squad.push(p);
             shiftMorale(x.c, 2);
             followUp(x.c, 'trialistBuzz', 8, { subject: p.id });
-            return `${p.name} signs on a handshake. Welcome to the club.`;
+            return `${p.name} 선수가 악수 한 번으로 입단합니다. 클럽에 온 걸 환영합니다.`;
         },
     },
     {
         id: 'taunt',
-        from: 'The Gazette',
-        title: 'Rival mouths off',
+        from: '가제트 신문',
+        title: '라이벌의 도발',
         when: () => true,
         body: (v) =>
-            `The manager of ${v.rival} has told the Gazette your squad "couldn't pass a ball to each other in an empty corridor". The paper wants your response for tomorrow's edition.`,
+            `${v.rival}의 감독이 가제트 신문에 "빈 복도에서도 서로에게 공 한 번 못 돌릴 팀"이라고 말했습니다. 신문사가 내일 조간에 실을 감독님의 대답을 원합니다.`,
         choices: () => [
-            { label: 'Fire back publicly', hint: 'Fires the squad up… usually' },
-            { label: 'Rise above it', hint: 'Stay calm' },
+            { label: '공개적으로 맞받아친다', hint: '선수단을 자극함... 대개는' },
+            { label: '의연하게 넘긴다', hint: '침착 유지' },
         ],
         resolve: (ch, v, x) => {
             if (ch === 1) {
                 shiftMorale(x.c, 1);
-                return 'You say nothing. Dignified. Slightly boring.';
+                return '아무 말도 하지 않습니다. 품위 있습니다. 조금 지루하기도 합니다.';
             }
             if (x.rng.chance(0.7)) {
                 shiftMorale(x.c, 9);
-                return `"See you on the pitch." The squad pins the article to the dressing-room wall.`;
+                return `"그라운드에서 봅시다." 선수단이 그 기사를 탈의실 벽에 붙여 놓았습니다.`;
             }
             shiftMorale(x.c, -6);
-            return `Your reply is misquoted as a love letter to ${v.rival}. The dressing room is merciless.`;
+            return `감독님의 대답이 ${v.rival}에게 보내는 연애편지처럼 잘못 인용되었습니다. 탈의실 분위기가 가차 없습니다.`;
         },
     },
     {
         id: 'sponsor',
-        from: 'The Gilded Goose Alehouse',
-        title: 'A sponsorship offer',
+        from: '황금 거위 주점',
+        title: '스폰서 제안',
         when: () => true,
         body: (v) =>
-            `Greetings! The Gilded Goose would be honoured to put its name across your shirts for the rest of the season. We offer ${money(v.amount)}, paid today. Our logo is a goose. It is gold. It is large.`,
+            `안녕하십니까! 황금 거위 주점이 이번 시즌 남은 기간 동안 유니폼에 이름을 올리는 영광을 누리고 싶습니다. 오늘 바로 ${money(v.amount)}을 드리겠습니다. 저희 로고는 거위입니다. 금색입니다. 큽니다.`,
         choices: (v) => [
-            { label: `Take the gold (${money(v.amount)})`, hint: 'Cash now, fans grumble' },
-            { label: 'Keep the shirts clean', hint: 'Fans approve' },
+            { label: `황금을 받는다 (${money(v.amount)})`, hint: '당장 현금, 팬들은 불평' },
+            { label: '유니폼을 깨끗하게 둔다', hint: '팬들이 좋아함' },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
-                x.pay('Shirt sponsor: Gilded Goose', v.amount);
+                x.pay('유니폼 스폰서: 황금 거위', v.amount);
                 shiftMorale(x.c, -4);
                 followUp(x.c, 'goose', 6, { amount: Math.round((v.amount * 0.3) / 1000) * 1000 });
-                return 'The goose is on the shirts. It is very large indeed.';
+                return '유니폼에 거위가 올랐습니다. 정말 아주 큽니다.';
             }
             shiftMorale(x.c, 3);
-            return 'The supporters club sends a thank-you pie.';
+            return '서포터즈 클럽이 감사의 의미로 파이를 보냈습니다.';
         },
     },
     {
         id: 'homesick',
-        from: 'Club physio',
-        title: 'A homesick player',
+        from: '클럽 물리치료사',
+        title: '향수병에 걸린 선수',
         when: (_c, u) => u.squad.length > 0,
         body: (v) =>
-            `${v.p!.name} hasn't been themselves. Missing home, by all accounts — barely touched their stew at supper. A couple of days' leave might do wonders, but they'd miss training and possibly a match.`,
+            `${v.p!.name} 선수가 평소와 다릅니다. 모두들 고향이 그리운 거라고 하더군요. 저녁 스튜도 거의 손대지 않았습니다. 며칠 휴가를 주면 큰 도움이 되겠지만 훈련과 경기를 놓칠 수 있습니다.`,
         choices: () => [
-            { label: 'Grant leave', hint: 'Out 3 days, morale up' },
-            { label: 'Keep them here', hint: 'Morale down' },
+            { label: '휴가를 준다', hint: '3일 결장, 사기 상승' },
+            { label: '남게 한다', hint: '사기 하락' },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
                 v.p!.injury = Math.max(v.p!.injury ?? 0, 3);
                 shiftMorale(x.c, 6);
-                return `${v.p!.name} heads home for a few days. The squad appreciates the gesture.`;
+                return `${v.p!.name} 선수가 며칠간 고향에 갑니다. 선수단이 그 배려를 고마워합니다.`;
             }
             shiftMorale(x.c, -6);
-            return `${v.p!.name} stays, sulking. The mood in the camp dips.`;
+            return `${v.p!.name} 선수가 시무룩하게 남습니다. 팀 분위기가 가라앉습니다.`;
         },
     },
     {
         id: 'scout',
-        from: 'Mags, your scout',
-        title: 'A whisper from the road',
+        from: '스카우트 맥스',
+        title: '길 위에서 들려온 소문',
         when: () => true,
         body: (v) =>
-            `Gaffer — I've seen something special. A kid playing in a village up past the moors, raw as anything but the potential is ridiculous. For ${money(v.amount)} in travel and bribes I can get their name on the transfer list where only we know to look.`,
+            `감독님, 특별한 걸 봤습니다. 황야 너머 마을에서 뛰는 아이인데, 아직 한참 거칠지만 잠재력이 말도 안 됩니다. 여비와 뇌물로 ${money(v.amount)}만 주시면 우리만 아는 자리에 그 이름을 이적 명단으로 올려 두겠습니다.`,
         choices: (v) => [
-            { label: `Fund the trip (${money(v.amount)})`, hint: 'Adds a high-potential youngster to the market' },
-            { label: 'Not now, Mags', hint: 'Nothing happens' },
+            { label: `출장비를 댄다 (${money(v.amount)})`, hint: '잠재력 높은 유망주가 시장에 등장' },
+            { label: '지금은 아니야, 맥스', hint: '아무 일도 없음' },
         ],
         resolve: (ch, v, x) => {
-            if (ch === 1) return 'Mags shrugs and goes back to her pipe.';
-            x.pay("Scout's expedition", -v.amount);
+            if (ch === 1) return '맥스가 어깨를 으쓱하고 파이프로 돌아갑니다.';
+            x.pay('스카우트 원정', -v.amount);
             const classes: ClassId[] = ['defender', 'midfielder', 'winger', 'striker'];
             const gem = generatePlayer(x.cfg, x.rng, x.rng.pick(classes), '', 0, `p${x.c.nextId++}`, {
                 levelRange: [1, 3],
@@ -403,53 +404,53 @@ const LETTERS: LetterDef[] = [
             });
             gem.growth = x.cfg.career.growthRange[1] + 1 + x.rng() * 1.2;
             x.c.market.unshift(gem);
-            return `Mags is back from ${nationOf(gem.nation).name}: ${gem.name} (${gem.cls}, ${gem.age}) is on the market. Five-star potential. Move fast.`;
+            return `맥스가 ${nationOf(gem.nation).name}에서 돌아왔습니다. ${gem.name}(${CLS_KO[gem.cls] ?? gem.cls}, ${gem.age}세)이(가) 시장에 나왔습니다. 잠재력 별 다섯 개. 서두르세요.`;
         },
     },
     {
         id: 'feast',
-        from: 'The town council',
-        title: 'Feast of the Harvest Moon',
+        from: '마을 의회',
+        title: '수확의 달 축제',
         when: () => true,
         body: () =>
-            'The whole town is feasting tonight in honour of the Harvest Moon, and the council has invited your squad as guests of honour. There will be roast boar. There will be mead. There will be, inevitably, dancing.',
+            '오늘 밤 온 마을이 수확의 달을 기리는 잔치를 엽니다. 의회가 선수단을 귀빈으로 초대했습니다. 멧돼지 구이가 나옵니다. 벌꿀술도 나옵니다. 그리고 어김없이 춤판이 벌어질 겁니다.',
         choices: () => [
-            { label: 'Let them celebrate', hint: 'Morale soars, someone may overdo it' },
-            { label: 'Early night, lads', hint: 'Safe and sober' },
+            { label: '마음껏 즐기게 한다', hint: '사기 급상승, 누군가 과음할 수도' },
+            { label: '일찍 자라, 친구들', hint: '안전하고 맨정신' },
         ],
         resolve: (ch, _v, x) => {
             if (ch === 1) {
                 shiftMorale(x.c, -2);
-                return 'The squad watches the fireworks from the dormitory window.';
+                return '선수단이 숙소 창문으로 불꽃놀이를 구경합니다.';
             }
             shiftMorale(x.c, 12);
             const fit = x.u.squad.filter((p) => !p.injury);
             if (fit.length && x.rng.chance(0.3)) {
                 const p = x.rng.pick(fit);
                 p.injury = 2;
-                return `A legendary night. ${p.name} fell off a table during the jig and is out for 2 days.`;
+                return `전설적인 밤이었습니다. ${p.name} 선수가 춤추다 탁자에서 떨어져 2일 결장합니다.`;
             }
-            return 'A legendary night. Nobody fell off anything. Mostly.';
+            return '전설적인 밤이었습니다. 아무도 어디서 떨어지지 않았습니다. 대체로요.';
         },
     },
     {
         // a real club wants one of your players: delivered by the transfer market, never drawn at random
         id: 'transferBid',
-        from: 'A transfer offer',
-        title: 'An offer for your player',
+        from: '이적 제안',
+        title: '우리 선수에 대한 제안',
         when: () => false,
         body: (v) =>
-            `${v.rival} want to sign ${v.p!.name} and are offering ${money(v.amount)}, more than the market would pay. Their scout has been in the stands for weeks, and their chairman is not a patient man.`,
+            `${v.rival}이(가) ${v.p!.name} 선수를 원하며 시장가보다 높은 ${money(v.amount)}을 제시했습니다. 그쪽 스카우트는 몇 주째 관중석에 앉아 있고, 회장은 참을성이 많은 사람이 아닙니다.`,
         choices: (v) => [
-            { label: `Sell (${money(v.amount)})`, hint: `${v.p!.name} joins ${v.rival}` },
-            { label: 'Not for sale', hint: 'The squad notices your loyalty' },
+            { label: `판매한다 (${money(v.amount)})`, hint: `${v.p!.name} 선수가 ${v.rival}(으)로 이적` },
+            { label: '팔지 않는다', hint: '선수단이 감독님의 의리를 알아봄' },
         ],
         resolve: (ch, v, x) => {
             const p = v.p!;
             const buyer = v.buyer ? x.c.clubs[v.buyer] : undefined;
             if (ch === 1 || !buyer || !x.u.squad.includes(p)) {
                 shiftMorale(x.c, 3);
-                return `You turn ${v.rival} down. ${p.name} stays, and the dressing room approves.`;
+                return `${v.rival}의 제안을 거절합니다. ${p.name} 선수는 남고 탈의실은 환영합니다.`;
             }
             x.u.squad = x.u.squad.filter((q) => q.id !== p.id);
             x.u.lineup = x.u.lineup.filter((id) => id !== p.id);
@@ -457,189 +458,189 @@ const LETTERS: LetterDef[] = [
             buyer.squad.push(p);
             buyer.budget -= v.amount;
             buyer.lineup = []; // rebuilt before their next match
-            x.pay(`Sold ${p.name} to ${buyer.name}`, v.amount);
-            return `${p.name} joins ${v.rival} for ${money(v.amount)}.`;
+            x.pay(`${p.name} 선수를 ${buyer.name}에 판매`, v.amount);
+            return `${p.name} 선수가 ${money(v.amount)}에 ${v.rival}(으)로 이적합니다.`;
         },
     },
     {
         id: 'healer',
-        from: 'Hedda the herbalist',
-        title: 'Poultices and promises',
+        from: '약초사 헤다',
+        title: '찜질약과 약속',
         when: (_c, u) => u.squad.some((p) => (p.injury ?? 0) >= 3),
         body: (v) =>
-            `I hear ${v.p!.name} is laid up. My poultices — moss, honey, and one ingredient I shan't name — have mended broken knights. For ${money(v.amount)} they'll be running by morning. Probably.`,
+            `${v.p!.name} 선수가 누워 있다고 들었습니다. 이끼, 꿀, 그리고 말 못 할 재료 하나로 만든 제 찜질약은 부러진 기사도 고쳤답니다. ${money(v.amount)}이면 아침엔 뛰어다닐 겁니다. 아마도요.`,
         choices: (v) => [
-            { label: `Pay Hedda (${money(v.amount)})`, hint: 'Probably heals the injury' },
-            { label: 'Trust the physio', hint: 'Let nature take its course' },
+            { label: `헤다에게 지불 (${money(v.amount)})`, hint: '아마 부상이 낫습니다' },
+            { label: '물리치료사를 믿는다', hint: '자연 회복에 맡김' },
         ],
         resolve: (ch, v, x) => {
-            if (ch === 1) return 'The physio nods approvingly. Hedda does not.';
-            x.pay("Hedda's poultice", -v.amount);
+            if (ch === 1) return '물리치료사는 고개를 끄덕입니다. 헤다는 아닙니다.';
+            x.pay('헤다의 찜질약', -v.amount);
             if (x.rng.chance(0.8)) {
                 delete v.p!.injury;
-                return `${v.p!.name} is up and running by morning. Nobody asks about the ingredient.`;
+                return `${v.p!.name} 선수가 아침에는 뛰어다닙니다. 아무도 재료에 대해 묻지 않습니다.`;
             }
-            return `${v.p!.name} now smells of moss. Still injured.`;
+            return `${v.p!.name} 선수에게서 이끼 냄새가 납니다. 여전히 부상 중입니다.`;
         },
     },
     // ---- situational letters
     {
         id: 'minutes',
-        from: 'A frustrated player',
-        title: 'A word about minutes',
+        from: '불만이 쌓인 선수',
+        title: '출전 시간에 대하여',
         when: (c) => Object.values(story(c).benched ?? {}).some((n) => n >= 3) && !story(c).promise,
         body: (v) =>
-            `Gaffer, it's ${v.p!.name}. I've sat on that bench for ${v.amount} matches now. I train hard, I'm ready, and I didn't come here to keep a seat warm. Give me a chance.`,
+            `감독님, ${v.p!.name}입니다. 벤치에 ${v.amount}경기째 앉아 있습니다. 열심히 훈련하고 준비도 됐습니다. 의자를 데우러 여기 온 게 아닙니다. 기회를 주세요.`,
         choices: () => [
-            { label: 'Promise a start next match', hint: 'Break it and the dressing room will know' },
-            { label: 'Tell them to earn it', hint: 'Morale dips a little' },
+            { label: '다음 경기 선발을 약속한다', hint: '어기면 탈의실이 알게 됨' },
+            { label: '직접 쟁취하라고 한다', hint: '사기 소폭 하락' },
         ],
         resolve: (ch, v, x) => {
             const p = v.p!;
             (story(x.c).benched ??= {})[p.id] = 0;
             if (ch === 0) {
                 story(x.c).promise = { id: p.id, name: p.name };
-                return `You promise ${p.name} a start in the next match. Better pick them.`;
+                return `${p.name} 선수에게 다음 경기 선발을 약속합니다. 꼭 선발에 넣으세요.`;
             }
             shiftMorale(x.c, -3);
-            return `${p.name} nods, jaw tight. "I'll earn it, then."`;
+            return `${p.name} 선수가 이를 악물고 고개를 끄덕입니다. "그럼 직접 쟁취하겠습니다."`;
         },
     },
     {
         id: 'curse',
-        from: 'Old Mother Grimble',
-        title: 'A curse on your house?',
+        from: '그림블 할멈',
+        title: '집안에 저주가?',
         when: (c) => (story(c).lossRun ?? 0) >= 3,
         body: (v) =>
-            `Three defeats on the bounce? That'll be the curse, dearie. Somebody buried a hexed boot under your centre spot — I can smell it from here. For ${money(v.amount)} I'll dig it up and say the proper words.`,
+            `3연패라고? 그건 저주야, 얘야. 누가 저주 걸린 축구화를 센터 서클 밑에 묻어 놨어. 여기서도 냄새가 나. ${money(v.amount)}만 주면 파내서 제대로 된 주문을 외워 주지.`,
         choices: (v) => [
-            { label: `Pay her (${money(v.amount)})`, hint: "The squad believes it, even if you don't" },
-            { label: 'We make our own luck', hint: 'Shrug it off' },
+            { label: `지불한다 (${money(v.amount)})`, hint: '감독님은 안 믿어도 선수단은 믿음' },
+            { label: '운은 우리가 만든다', hint: '웃어넘김' },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
-                x.pay('Curse removal', -v.amount);
+                x.pay('저주 해제', -v.amount);
                 shiftMorale(x.c, 9);
-                return 'Grimble digs up a rotten old boot. The squad cheers. Nobody asks how it got there.';
+                return '그림블 할멈이 썩은 낡은 축구화를 파냅니다. 선수단이 환호합니다. 아무도 그게 어떻게 거기 있었는지 묻지 않습니다.';
             }
             if (x.rng.chance(0.5)) {
                 shiftMorale(x.c, -3);
-                return 'The players keep glancing at the centre spot.';
+                return '선수들이 자꾸 센터 서클을 힐끔거립니다.';
             }
-            return 'You laugh it off. Somehow that helps.';
+            return '웃어넘깁니다. 어쩐지 그게 도움이 됩니다.';
         },
     },
     {
         id: 'clearAir',
-        from: 'Your captain',
-        title: 'Clear the air',
+        from: '주장',
+        title: '앙금 풀기',
         when: (c) => story(c).morale < 36,
         body: (v) =>
-            `Boss, ${v.p!.name} here. The lads are low and some are whispering in corners. I think we need a proper sit-down: everyone says their piece, no grudges after. Or we just run it off on the training pitch. Your call.`,
+            `감독님, ${v.p!.name}입니다. 선수들이 가라앉아 있고 몇몇은 구석에서 수군거립니다. 제대로 모여 앉아 각자 할 말을 하고 뒤끝 없이 끝내는 게 좋겠습니다. 아니면 훈련장에서 땀으로 털어내도 됩니다. 결정은 감독님이 하십시오.`,
         choices: () => [
-            { label: 'Hold the meeting', hint: 'Usually a big lift; can get heated' },
-            { label: 'Run it off', hint: 'Small XP for everyone, mood stays low' },
+            { label: '미팅을 연다', hint: '대개 큰 효과, 과열될 수 있음' },
+            { label: '뛰어서 털어낸다', hint: '전원 소량 경험치, 분위기는 그대로' },
         ],
         resolve: (ch, _v, x) => {
             if (ch === 0) {
                 if (x.rng.chance(0.7)) {
                     shiftMorale(x.c, 13);
-                    return 'Words were said, hands were shaken. The dressing room feels lighter.';
+                    return '할 말을 했고 악수를 나눴습니다. 탈의실이 한결 가벼워졌습니다.';
                 }
                 shiftMorale(x.c, 3);
-                return 'It got heated. A chair was thrown. But something shifted, a little.';
+                return '분위기가 과열됐습니다. 의자가 날아갔습니다. 하지만 뭔가 조금은 달라졌습니다.';
             }
             for (const p of x.u.squad.filter((q) => !q.injury)) gainXp(x.cfg, p, 20);
             shiftMorale(x.c, -1);
-            return 'Laps until dusk. Fitter, if not happier.';
+            return '해질 때까지 달렸습니다. 행복해지진 않았어도 체력은 좋아졌습니다.';
         },
     },
     {
         id: 'veteran',
-        from: 'Your oldest player',
-        title: 'One more season?',
+        from: '최고참 선수',
+        title: '한 시즌만 더?',
         when: (_c, u) => u.squad.some((p) => p.age >= 32),
         body: (v) =>
-            `It's ${v.p!.name}. I'm ${v.p!.age} now and my knees sound like a cart going over cobbles. I've been thinking this might be my last year... unless you still need me out there.`,
+            `${v.p!.name}입니다. 이제 ${v.p!.age}세인데 무릎에서 자갈길 달구지 소리가 납니다. 올해가 마지막일 수도 있겠다 싶었는데... 감독님이 아직 저를 필요로 하신다면 모르겠습니다.`,
         choices: () => [
-            { label: 'We need you', hint: 'Morale up; they age a little more gracefully' },
-            { label: 'Ask them to coach the kids', hint: 'Young players gain XP now' },
+            { label: '자네가 필요하네', hint: '사기 상승, 노화가 조금 더딤' },
+            { label: '어린 선수들을 지도해 달라고 한다', hint: '젊은 선수들이 지금 경험치 획득' },
         ],
         resolve: (ch, v, x) => {
             const p = v.p!;
             if (ch === 0) {
                 shiftMorale(x.c, 5);
                 p.peakAge += 1;
-                return `${p.name} grins. "One more, then." The squad loves it.`;
+                return `${p.name} 선수가 씩 웃습니다. "그럼 한 시즌 더." 선수단이 열광합니다.`;
             }
             const kids = x.u.squad.filter((q) => q.age <= 21 && q.id !== p.id);
             for (const q of kids) gainXp(x.cfg, q, 45);
-            return `${p.name} takes the youngsters under their wing. ${kids.length} of them are already sharper.`;
+            return `${p.name} 선수가 어린 선수들을 품어 줍니다. ${kids.length}명이 벌써 한결 날카로워졌습니다.`;
         },
     },
     // ---- follow-ups (only ever arrive as consequences)
     {
         id: 'ballad',
-        from: 'Odo Lutewright, Bard',
-        title: 'The Ballad of the Tight Purse',
+        from: '음유시인 오도 루트라이트',
+        title: '짠 지갑의 발라드',
         when: () => false,
         body: (v) =>
-            `Manager! My little ballad about your purse has become a tavern favourite from here to the coast. Children sing it. Goats, I'm told, hum it. I could write a second verse — a kinder one — for, say, ${money(v.amount)}.`,
+            `감독님! 감독님의 지갑에 대한 제 작은 발라드가 여기서 해안까지 주점마다 인기랍니다. 아이들이 부르고, 염소들도 흥얼거린다더군요. 더 다정한 2절을 ${money(v.amount)} 정도에 써 드릴 수 있습니다.`,
         choices: (v) => [
-            { label: `Buy the kinder verse (${money(v.amount)})`, hint: 'Morale up' },
-            { label: 'Let them sing', hint: 'Morale down' },
+            { label: `다정한 2절을 산다 (${money(v.amount)})`, hint: '사기 상승' },
+            { label: '부르게 둔다', hint: '사기 하락' },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
-                x.pay('A kinder verse', -v.amount);
+                x.pay('다정한 2절', -v.amount);
                 shiftMorale(x.c, 7);
-                return 'Verse two calls you "wise beyond your purse". The squad hums it on the bus.';
+                return '2절은 감독님을 "지갑을 넘어선 현명함"이라 부릅니다. 선수단이 버스에서 흥얼거립니다.';
             }
             shiftMorale(x.c, -4);
-            return 'The away fans have learned the ballad. All of it.';
+            return '원정 팬들이 그 발라드를 외웠습니다. 전부요.';
         },
     },
     {
         id: 'goose',
-        from: 'The Gilded Goose Alehouse',
-        title: 'The goose wants a word',
+        from: '황금 거위 주점',
+        title: '거위가 할 말이 있답니다',
         when: () => false,
         body: () =>
-            'Per section nine of our sponsorship (the small print, beneath the goose), your squad shall attend the annual Goose Festival. There will be geese. Your players will be asked to wear beaks. Decline, and we keep a slice of the fee.',
+            '스폰서 계약 9조(거위 그림 밑의 작은 글씨)에 따라 선수단은 연례 거위 축제에 참석해야 합니다. 거위들이 나옵니다. 선수들은 부리를 써야 합니다. 거절하시면 계약금 일부를 돌려받겠습니다.',
         choices: (v) => [
-            { label: 'Beaks on', hint: 'Keep the money, lose some dignity' },
-            { label: 'Absolutely not', hint: `Pay back ${money(v.amount)}, squad approves` },
+            { label: '부리를 쓴다', hint: '돈은 지키고 체면은 잃음' },
+            { label: '절대 안 된다', hint: `${money(v.amount)} 반환, 선수단은 환영` },
         ],
         resolve: (ch, v, x) => {
             if (ch === 0) {
                 shiftMorale(x.c, -4);
-                return 'Photographs of your striker in a beak are now on every tavern wall.';
+                return '부리를 쓴 스트라이커의 사진이 이제 모든 주점 벽에 걸려 있습니다.';
             }
-            x.pay('Goose Festival penalty', -v.amount);
+            x.pay('거위 축제 위약금', -v.amount);
             shiftMorale(x.c, 5);
-            return 'You refuse the beaks. The squad would follow you anywhere. Except a Goose Festival.';
+            return '부리를 거절합니다. 선수단은 감독님을 어디든 따를 겁니다. 거위 축제만 빼고요.';
         },
     },
     {
         id: 'trialistBuzz',
-        from: 'Mags, your scout',
-        title: 'The trialist is turning heads',
+        from: '스카우트 맥스',
+        title: '테스트 선수가 눈길을 끕니다',
         when: () => false,
         body: (v) =>
-            `${v.p!.name} — the muddy kid from the gate — has been tearing up training. Two of the senior lads asked me where on earth you found them. Give them a run and I reckon they'll grow fast. Or let them simmer.`,
+            `${v.p!.name}, 정문에 나타났던 그 진흙투성이 아이가 훈련을 휩쓸고 있습니다. 고참 둘이 대체 어디서 찾아냈냐고 묻더군요. 기회를 주면 빨리 클 겁니다. 아니면 더 묵혀 두셔도 됩니다.`,
         choices: () => [
-            { label: 'Fast-track them', hint: 'Big XP now' },
-            { label: 'Let them simmer', hint: 'Higher growth for the rest of their career' },
+            { label: '속성으로 키운다', hint: '지금 경험치 대폭' },
+            { label: '더 묵힌다', hint: '남은 선수 생활 동안 성장 보너스' },
         ],
         resolve: (ch, v, x) => {
             const p = v.p!;
             if (ch === 0) {
                 const ready = gainXp(x.cfg, p, 120);
                 shiftMorale(x.c, 2);
-                return ready ? `${p.name} is ready to level up already. What a find.` : `${p.name} soaks it all up.`;
+                return ready ? `${p.name} 선수가 벌써 레벨업 준비를 마쳤습니다. 대단한 발굴입니다.` : `${p.name} 선수가 모든 걸 스펀지처럼 흡수합니다.`;
             }
             p.growth = +(p.growth + 0.35).toFixed(2);
-            return `${p.name} will be given time. Mags reckons patience will pay.`;
+            return `${p.name} 선수에게 시간을 줍니다. 맥스는 인내가 보상받을 거라고 봅니다.`;
         },
     },
 ];
@@ -834,11 +835,11 @@ export const afterMatchday = (
         const sw = cfg.career.prep.derbySwing;
         if (outcome > 0) {
             shiftMorale(c, sw);
-            news(`Derby win over ${rival.name}! The town will be talking about it for weeks.`, 'good');
+            news(`${rival.name}와의 더비에서 승리! 마을이 몇 주간 이 얘기로 떠들썩할 겁니다.`, 'good');
         } else if (outcome < 0) {
             shiftMorale(c, -sw);
-            news(`Derby defeat to ${rival.name}. Nobody in town will let you forget it.`, 'bad');
-        } else news(`Honours even in the derby with ${rival.name}.`, 'info');
+            news(`${rival.name}에게 더비 패배. 마을 사람 누구도 이 일을 잊게 두지 않을 겁니다.`, 'bad');
+        } else news(`${rival.name}와의 더비는 무승부로 끝났습니다.`, 'info');
     }
     // promises and playing time
     if (s.promise) {
@@ -846,8 +847,8 @@ export const afterMatchday = (
         shiftMorale(c, kept ? 4 : -10);
         news(
             kept
-                ? `You kept your word: ${s.promise.name} started.`
-                : `You promised ${s.promise.name} a start and didn't deliver. The dressing room noticed.`,
+                ? `약속을 지켰습니다. ${s.promise.name} 선수가 선발로 나왔습니다.`
+                : `${s.promise.name} 선수에게 선발을 약속하고 지키지 않았습니다. 탈의실이 알아챘습니다.`,
             kept ? 'good' : 'bad',
         );
         delete s.promise;
@@ -871,8 +872,8 @@ export const afterMatchday = (
     unbeaten.unbeatenRun = gf >= ga ? (unbeaten.unbeatenRun ?? 0) + 1 : 0;
     recordLines(c, lines);
     const reward = (amount: number, title: string) => {
-        pay(`Quest complete: ${title}`, amount);
-        news(`Quest complete: ${title}! +${money(amount)} and the squad is buzzing.`, 'good');
+        pay(`퀘스트 완료: ${title}`, amount);
+        news(`퀘스트 완료: ${title}! +${money(amount)}, 선수단이 들떠 있습니다.`, 'good');
     };
     bumpQuest(cfg, c, 'streak', Math.max(0, s.streak), 'max', reward);
     bumpQuest(cfg, c, 'goals', gf, 'add', reward);
@@ -901,23 +902,23 @@ export const seasonAwards = (c: Career): Array<{ title: string; who: string; det
     const s = story(c);
     const u = c.clubs[c.userClubId]!;
     const out: Array<{ title: string; who: string; detail: string; icon: 'cup' | 'medal' | 'boot' | 'star' }> = [];
-    if (c.cup?.champion) out.push({ title: CUP_NAME, who: c.clubs[c.cup.champion]!.name, detail: 'Cup winners', icon: 'cup' });
+    if (c.cup?.champion) out.push({ title: CUP_NAME, who: c.clubs[c.cup.champion]!.name, detail: '컵 우승', icon: 'cup' });
     if (c.intl?.champion)
-        out.push({ title: INTL_CUP_NAME, who: c.clubs[c.intl.champion]!.name, detail: 'Champions of the continent', icon: 'cup' });
+        out.push({ title: INTL_CUP_NAME, who: c.clubs[c.intl.champion]!.name, detail: '대륙 챔피언', icon: 'cup' });
     const div = c.divisions.find((d) => d.clubs.includes(u.id))!;
     // golden boot across the user's division
     const everyone = div.clubs.flatMap((id) => c.clubs[id]!.squad.map((p) => ({ p, club: c.clubs[id]!, l: s.seasonStats[p.id] })));
     const boot = everyone.filter((x) => x.l).sort((a, b) => b.l!.goals - a.l!.goals)[0];
     if (boot && boot.l!.goals > 0)
-        out.push({ title: 'Golden Boot', who: `${boot.p.name} (${boot.club.short})`, detail: `${boot.l!.goals} goals`, icon: 'boot' });
+        out.push({ title: '득점왕', who: `${boot.p.name} (${boot.club.short})`, detail: `${boot.l!.goals}골`, icon: 'boot' });
     const mine = u.squad.map((p) => ({ p, l: s.seasonStats[p.id] })).filter((x) => x.l && x.l.apps >= 3);
     const pots = mine.sort((a, b) => avgRating(b.l) - avgRating(a.l))[0];
     if (pots)
-        out.push({ title: 'Player of the Season', who: pots.p.name, detail: `avg rating ${avgRating(pots.l).toFixed(2)}`, icon: 'star' });
+        out.push({ title: '올해의 선수', who: pots.p.name, detail: `평균 평점 ${avgRating(pots.l).toFixed(2)}`, icon: 'star' });
     const done = s.quests.filter((q) => q.done).length;
     out.push({
-        title: 'Quests completed',
-        who: `${done} of ${s.quests.length}`,
+        title: '완료한 퀘스트',
+        who: `${s.quests.length}개 중 ${done}개`,
         detail: s.quests.map((q) => `${q.done ? '✓' : '✗'} ${q.title}`).join(' · '),
         icon: 'medal',
     });

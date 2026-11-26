@@ -19,100 +19,100 @@ const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (
 
 const L = {
     kickoff: [
-        "And we're under way! {team} get us started.",
-        '{team} tap it off. Ninety minutes of shoving pieces round a board begins now.',
-        'The whistle goes, {team} kick off, and somewhere a tactician sharpens a pencil.',
+        '경기가 시작됩니다! {team} 팀이 공을 굴립니다.',
+        '{team} 팀의 킥오프. 보드 위에서 말을 굴리는 90분이 지금 시작됩니다.',
+        '휘슬이 울리고 {team} 팀이 킥오프합니다. 어딘가에서 전술가가 연필을 깎습니다.',
     ],
     goal: [
-        'GOAL! {p} finds the net and {team} are dancing!',
-        "{p} SCORES! You won't see a more confident finish in this league all season.",
-        "IT'S IN! {p} buries it — the away end has gone very, very quiet.",
-        'GOAL for {team}! {p}, take a bow. Take two, actually.',
-        "{p}! Oh, that's lovely. The keeper didn't even get a vote.",
+        '골! {p} 선수가 골망을 흔들고 {team} 팀이 춤을 춥니다!',
+        '{p} 선수 득점! 올 시즌 이 리그에서 이보다 자신감 넘치는 마무리는 보기 어렵습니다.',
+        '들어갔습니다! {p} 선수가 꽂아 넣었고 원정 응원석이 아주 조용해졌습니다.',
+        '{team} 팀의 골! {p} 선수, 인사하세요. 아니, 두 번 하세요.',
+        '{p} 선수! 아, 정말 아름답습니다. 골키퍼는 손도 못 썼습니다.',
     ],
     goalAssist: [
-        'GOAL! {a} with the vision, {p} with the finish!',
-        '{a} picks the lock, {p} walks through the door. GOAL!',
-        'What a move! {a} to {p}, and {team} lead the dance!',
+        '골! {a} 선수의 시야, {p} 선수의 마무리!',
+        '{a} 선수가 자물쇠를 따고 {p} 선수가 문으로 걸어 들어갑니다. 골!',
+        '대단한 공격입니다! {a} 선수에서 {p} 선수로, {team} 팀이 앞서갑니다!',
     ],
-    goalHeader: ['HEADER! {p} rises like a griffin and nods it home!', '{p} attacks that cross like it owes them money! GOAL!'],
+    goalHeader: ['헤더! {p} 선수가 그리핀처럼 솟구쳐 머리로 밀어 넣습니다!', '{p} 선수가 빚 받으러 온 듯 크로스에 달려듭니다! 골!'],
     goalPen: [
-        '{p} steps up... and sends the keeper to the wrong postcode. Penalty scored!',
-        'Cool as frost from {p}. The penalty is dispatched.',
+        '{p} 선수가 나서서... 골키퍼를 엉뚱한 주소로 보냅니다. 페널티 성공!',
+        '{p} 선수의 서리처럼 차가운 마무리. 페널티킥이 깔끔하게 처리됩니다.',
     ],
     save: [
-        'What a save from {k}! Fingertips and fury.',
-        "{k} says no! That's a stop worthy of a ballad.",
-        "Denied! {k} reads {p}'s mind and gets there first.",
-        "{k} — WHAT A STOP! The crowd can't believe it.",
+        '{k} 선수의 대단한 선방! 손끝과 분노의 결과입니다.',
+        '{k} 선수가 막아냅니다! 발라드로 남을 만한 선방입니다.',
+        '막혔습니다! {k} 선수가 {p} 선수의 마음을 읽고 먼저 도착했습니다.',
+        '{k} 선수, 이게 선방입니다! 관중이 믿지 못합니다.',
     ],
-    parry: ["{k} can only parry it! It's loose in the box!", 'Palmed away by {k} — and the vultures are circling!'],
+    parry: ['{k} 선수가 쳐내는 게 전부입니다! 박스 안에 공이 흘렀습니다!', '{k} 선수가 손바닥으로 쳐냅니다. 하이에나들이 맴돕니다!'],
     wide: [
-        "{p} drags it wide. That one's in the next village.",
-        'Off target from {p}. Somewhere a farmer is getting his ball back.',
-        '{p} lets fly... and the corner flag ducks. Wide.',
-        'Ambitious from {p}. Inaccurate, but ambitious.',
+        '{p} 선수의 슛이 빗나갑니다. 옆 마을까지 날아갔습니다.',
+        '{p} 선수의 슛이 골대를 벗어납니다. 어딘가에서 농부가 공을 돌려받겠군요.',
+        '{p} 선수가 강하게 찼는데... 코너 플래그가 몸을 숙였습니다. 빗나갑니다.',
+        '{p} 선수의 야심 찬 시도. 부정확했지만 야심은 있었습니다.',
     ],
-    block: ['Blocked! {o} throws everything in front of that.', '{o} with the body on the line. Brave as a paladin.'],
+    block: ['막혔습니다! {o} 선수가 모든 것을 던져 슛 앞을 막았습니다.', '{o} 선수가 몸을 던졌습니다. 성기사처럼 용감합니다.'],
     intercept: [
-        '{o} reads it like a cheap paperback. Intercepted.',
-        'Cut out by {o}! That lane was never open.',
-        'Lovely anticipation from {o}. Possession changes hands.',
+        '{o} 선수가 싸구려 소설책처럼 읽어 냅니다. 인터셉트.',
+        '{o} 선수가 끊어 냅니다! 그 길은 처음부터 열려 있지 않았습니다.',
+        '{o} 선수의 훌륭한 예측. 공의 주인이 바뀝니다.',
     ],
     steal: [
-        "{o} picks {p}'s pocket! Clean as you like.",
-        "{p} tried to dance through, {o} wasn't on the dance card. Ball won.",
-        "Timing! {o} steps in and takes it off {p}'s toes.",
+        '{o} 선수가 {p} 선수의 주머니를 털었습니다! 아주 깔끔합니다.',
+        '{p} 선수가 춤추듯 뚫으려 했지만 {o} 선수는 그 춤 순서에 없었습니다. 공을 따냈습니다.',
+        '타이밍! {o} 선수가 들어가 {p} 선수의 발끝에서 공을 가져갑니다.',
     ],
-    tackle: ["Strong challenge from {o}, and it's won!", '{o} goes to ground and comes up with the ball. Textbook.'],
-    missedTackle: ['{o} lunges and grabs nothing but air.', '{o} commits... and {p} is gone! That one will sting.'],
-    dribble: ['{p} skips past {o}! Lovely feet.', '{p} leaves {o} on the floor wondering what happened.'],
-    trick: ['{p} with a dummy! {o} has bought it entirely.', 'Oh, the shimmy from {p}! {o} is still looking the other way.'],
-    through: ['Threaded through by {p}! {r} is away!', '{p} spots the run, {r} gets on the end of it. Danger!'],
-    cross: ['{p} whips in the cross...', 'In it comes from {p}!'],
-    foul: ['Cynical from {o}. Stopped {p} like a portcullis.', '{o} pulls {p} back. The referee has seen it.'],
-    penalty: ['PENALTY! {o} brings {p} down in the box!', "Oh no, {o}... that's a spot kick."],
+    tackle: ['{o} 선수의 강한 태클, 성공입니다!', '{o} 선수가 몸을 던져 공을 따내고 일어납니다. 교과서적입니다.'],
+    missedTackle: ['{o} 선수가 달려들지만 허공만 움켜쥡니다.', '{o} 선수가 들어갔지만... {p} 선수는 이미 사라졌습니다! 쓰라린 장면입니다.'],
+    dribble: ['{p} 선수가 {o} 선수를 제칩니다! 발놀림이 아름답습니다.', '{p} 선수가 {o} 선수를 바닥에 남겨 둔 채 무슨 일인지 궁금하게 만듭니다.'],
+    trick: ['{p} 선수의 더미! {o} 선수가 완전히 속았습니다.', '아, {p} 선수의 시미! {o} 선수는 아직 반대쪽을 보고 있습니다.'],
+    through: ['{p} 선수의 스루패스! {r} 선수가 빠져나갑니다!', '{p} 선수가 침투를 보았고 {r} 선수가 받아 냅니다. 위험합니다!'],
+    cross: ['{p} 선수가 크로스를 올립니다...', '{p} 선수의 크로스가 들어옵니다!'],
+    foul: ['{o} 선수의 냉혹한 파울. {p} 선수를 성문처럼 막아섰습니다.', '{o} 선수가 {p} 선수를 잡아당깁니다. 심판이 봤습니다.'],
+    penalty: ['페널티! {o} 선수가 박스 안에서 {p} 선수를 넘어뜨렸습니다!', '아, {o} 선수... 페널티킥입니다.'],
     tackleFoul: [
-        '{o} goes through the back of {p}. {r} blows.',
-        'Late from {o}! {r} has the whistle out.',
-        '{o} gets plenty of {p} and none of the ball. Free kick.',
+        '{o} 선수가 {p} 선수의 뒤를 덮칩니다. {r} 심판이 휘슬을 붑니다.',
+        '{o} 선수의 늦은 태클! {r} 심판이 휘슬을 꺼냅니다.',
+        '{o} 선수가 {p} 선수만 잔뜩 맞히고 공은 건드리지 못했습니다. 프리킥.',
     ],
-    advantage: ['{o} clips {p}, but {r} waves play on. Advantage!', 'Foul by {o} — {r} lets it run. Lovely refereeing.'],
+    advantage: ['{o} 선수가 {p} 선수를 걸었지만 {r} 심판이 플레이를 이어 가게 합니다. 어드밴티지!', '{o} 선수의 파울. {r} 심판이 그대로 진행시킵니다. 멋진 판정입니다.'],
     corner: [
-        'Corner to {team}. Big bodies forward!',
-        '{team} win a corner. This is where the set-piece coach earns their wage.',
-        'Corner kick. Everyone into the box, elbows sharpened.',
+        '{team} 팀의 코너킥. 덩치들이 전진합니다!',
+        '{team} 팀이 코너킥을 얻었습니다. 세트피스 코치가 밥값을 할 순간입니다.',
+        '코너킥. 모두가 박스 안으로, 팔꿈치를 세웁니다.',
     ],
     freekick: [
-        'Free kick to {team} in a dangerous spot. The wall assembles.',
-        "{team} have a free kick within range. Who's standing over it?",
+        '{team} 팀의 위험한 위치 프리킥. 벽이 세워집니다.',
+        '{team} 팀이 사정권에서 프리킥을 얻었습니다. 누가 공 앞에 설까요?',
     ],
     escape: [
-        '{p} rides the challenge and is away!',
-        'Missed! {p} skips clear with the whole defence on the wrong foot.',
-        '{p} beats the tackle — and that is a lot of grass to run into.',
+        '{p} 선수가 태클을 버텨 내고 빠져나갑니다!',
+        '놓쳤습니다! {p} 선수가 수비진 전체의 중심을 무너뜨리고 빠져나갑니다.',
+        '{p} 선수가 태클을 이겨 냅니다. 달릴 잔디가 아주 많이 남았습니다.',
     ],
     bonus: [
-        '{p} wins it and goes again — away from the scrum!',
-        'Won it, and {p} is off before anyone can blink.',
-        '{p} has the ball and the jump on everyone.',
+        '{p} 선수가 공을 따내고 다시 나아갑니다. 혼전에서 벗어났습니다!',
+        '공을 따냈고, {p} 선수는 눈 깜짝할 새 사라졌습니다.',
+        '{p} 선수가 공을 잡고 모두보다 한발 앞서 있습니다.',
     ],
     sub: [
-        'Change for {team}: {on} comes on for {off}.',
-        '{off} makes way, {on} on. Fresh legs for {team}.',
-        '{team} roll the dice — {on} replaces a weary {off}.',
+        '{team} 팀 교체: {off} 선수 대신 {on} 선수가 들어옵니다.',
+        '{off} 선수가 물러나고 {on} 선수가 들어옵니다. {team} 팀에 신선한 다리입니다.',
+        '{team} 팀이 승부수를 던집니다. 지친 {off} 선수 대신 {on} 선수.',
     ],
-    styleIntro: ['{team} line up as a {style} side. {note}', 'Expect {team} to play it {style}: {note}'],
-    chase: ['{team} are throwing bodies forward now. Needs must.', "Time's running out for {team} — everyone up!"],
-    protect: ['{team} are shutting up shop. Ten behind the ball.', '{team} sit on their lead. Ugly, but it might work.'],
-    refIntro: ["Today's referee: {r}. {note}", '{r} has the whistle today. {note}'],
-    yellow: ['{o} goes in the book.', 'Yellow card for {o}. Steady now.'],
-    red: ["RED CARD! {o} is off — that's a long, lonely walk.", 'Second yellow, and {o} is sent packing!'],
-    command: ['{k} organises the defence. Voice like a war horn, that one.', '{k} is shouting. Loudly. It seems to be working.'],
-    tempo: ['{p} snaps their fingers and the tempo lifts.', '{p} conducts. {r} goes next.'],
-    timeout: ["{p} hesitates... and the moment's gone.", 'Indecision from {p}. The clock waits for no one.'],
-    halftime: ["That's half time. {s}. Oranges and harsh words in the dressing rooms.", 'The whistle for the break: {s}.'],
-    fulltime: ["It's all over! {s}.", 'Full time. {s}. The bards will sing of it, briefly.'],
+    styleIntro: ['{team} 팀은 {style} 스타일로 나섭니다. {note}', '{team} 팀은 {style} 스타일로 경기할 것입니다. {note}'],
+    chase: ['{team} 팀이 이제 사람을 앞으로 던집니다. 어쩔 수 없습니다.', '{team} 팀은 시간이 없습니다. 모두 올라갑니다!'],
+    protect: ['{team} 팀이 문을 닫습니다. 열 명이 공 뒤에 있습니다.', '{team} 팀이 리드를 지키며 앉습니다. 보기엔 안 좋아도 통할지 모릅니다.'],
+    refIntro: ['오늘의 심판은 {r}. {note}', '오늘은 {r} 심판이 휘슬을 쥡니다. {note}'],
+    yellow: ['{o} 선수가 경고를 받습니다.', '{o} 선수에게 옐로카드. 침착하게 가야 합니다.'],
+    red: ['레드카드! {o} 선수가 퇴장합니다. 길고 외로운 걸음입니다.', '두 번째 옐로, {o} 선수가 퇴장당합니다!'],
+    command: ['{k} 선수가 수비를 정비합니다. 목소리가 뿔나팔 같습니다.', '{k} 선수가 소리치고 있습니다. 아주 크게. 효과가 있는 듯합니다.'],
+    tempo: ['{p} 선수가 손가락을 튕기자 템포가 올라갑니다.', '{p} 선수가 지휘합니다. 다음은 {r} 선수 차례입니다.'],
+    timeout: ['{p} 선수가 망설이다가... 순간이 지나가 버렸습니다.', '{p} 선수의 망설임. 시계는 누구도 기다려 주지 않습니다.'],
+    halftime: ['전반 종료. {s}. 탈의실에는 오렌지와 거친 말이 오갑니다.', '휴식을 알리는 휘슬: {s}.'],
+    fulltime: ['경기 종료! {s}.', '풀타임. {s}. 음유시인들이 짧게나마 노래할 겁니다.'],
 };
 
 export class Commentator {
@@ -129,7 +129,7 @@ export class Commentator {
 
     /** Lines for one batch of engine events (most batches say nothing: silence is pacing). */
     style(team: TeamSide, style: string, note: string): Line[] {
-        return [this.line('styleIntro', { team: this.teamName(team), style: style.toLowerCase(), note }, 'info', team)];
+        return [this.line('styleIntro', { team: this.teamName(team), style, note }, 'info', team)];
     }
 
     mood(team: TeamSide, mood: 'chase' | 'protect'): Line[] {
@@ -158,7 +158,7 @@ export class Commentator {
                     break;
                 case 'setpiece':
                     out.push(
-                        this.line(e.kind, { team: this.teamName(e.team) }, 'info', e.team, e.kind === 'corner' ? 'CORNER' : 'FREE KICK'),
+                        this.line(e.kind, { team: this.teamName(e.team) }, 'info', e.team, e.kind === 'corner' ? '코너킥' : '프리킥'),
                     );
                     break;
                 case 'ability':
@@ -199,10 +199,10 @@ export class Commentator {
                     out.push(
                         this.line(
                             e.held ? 'save' : 'parry',
-                            { k: k.player.name, p: lastShooter ? this.name(lastShooter) : 'the shooter' },
+                            { k: k.player.name, p: lastShooter ? this.name(lastShooter) : '슈터' },
                             'big',
                             k.team,
-                            e.held ? 'WHAT A SAVE' : 'PARRIED',
+                            e.held ? '슈퍼 세이브' : '쳐냄',
                         ),
                     );
                     break;
@@ -221,7 +221,7 @@ export class Commentator {
                             v,
                             e.penalty ? 'big' : 'info',
                             this.m.piece(e.on).team,
-                            e.penalty ? 'PENALTY' : fk ? 'FREE KICK' : undefined,
+                            e.penalty ? '페널티' : fk ? '프리킥' : undefined,
                         ),
                     );
                     break;
@@ -233,7 +233,7 @@ export class Commentator {
                             { o: this.name(e.on) },
                             e.card === 'red' ? 'big' : 'info',
                             this.m.piece(e.on).team,
-                            e.card === 'red' ? 'SENT OFF' : undefined,
+                            e.card === 'red' ? '퇴장' : undefined,
                         ),
                     );
                     break;
@@ -246,7 +246,7 @@ export class Commentator {
                     const headed = events.some((x) => x.t === 'header');
                     const pen = events.some((x) => x.t === 'foul' && x.penalty);
                     const key = pen ? 'goalPen' : headed ? 'goalHeader' : assist ? 'goalAssist' : 'goal';
-                    out.push(this.line(key, v, 'big', e.team, 'GOAL'));
+                    out.push(this.line(key, v, 'big', e.team, '골'));
                     break;
                 }
                 case 'timeout':

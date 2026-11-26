@@ -9,14 +9,14 @@ import type { Rng } from '../rng';
 import type { Player } from '../types';
 
 export const DRILLS: Record<StatId, { label: string; note: string }> = {
-    speed: { label: 'Speed', note: 'Sprint starts' },
-    pace: { label: 'Pace', note: 'Distance runs' },
-    passing: { label: 'Passing', note: 'Rondos' },
-    shooting: { label: 'Shooting', note: 'Finishing' },
-    dribbling: { label: 'Dribbling', note: 'Cone work' },
-    tackling: { label: 'Tackling', note: 'Tackle boxes' },
-    reflexes: { label: 'Reflexes', note: 'Reaction saves' },
-    composure: { label: 'Composure', note: 'Pressure games' },
+    speed: { label: '속도', note: '스프린트 출발' },
+    pace: { label: '주력', note: '장거리 러닝' },
+    passing: { label: '패스', note: '론도' },
+    shooting: { label: '슈팅', note: '마무리 훈련' },
+    dribbling: { label: '드리블', note: '콘 드리블' },
+    tackling: { label: '태클', note: '태클 박스' },
+    reflexes: { label: '반사신경', note: '반응 선방' },
+    composure: { label: '침착성', note: '압박 게임' },
 };
 export const DRILL_IDS = Object.keys(DRILLS) as StatId[];
 

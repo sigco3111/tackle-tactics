@@ -3,9 +3,9 @@ import type { TeamSide } from '../types';
 import type { Fixture } from './career';
 
 /** The domestic knockout, open to every club in the manager's pyramid. */
-export const CUP_NAME = 'Pyramid Cup';
+export const CUP_NAME = '피라미드 컵';
 /** The international knockout: the best two clubs of every nation's top flight. */
-export const INTL_CUP_NAME = 'Champions Cup';
+export const INTL_CUP_NAME = '챔피언스 컵';
 
 export type CupKey = 'cup' | 'intl';
 export type CupFixture = Fixture & { competition: 'cup'; penalties?: [number, number] };
@@ -35,10 +35,10 @@ const draw = (key: CupKey, clubs: readonly string[], rng: Rng, season: number, r
 };
 
 const roundLabel = (size: number) => {
-    if (size === 2) return 'Final';
-    if (size === 4) return 'Semi-finals';
-    if (size === 8) return 'Quarter-finals';
-    return `Round of ${size}`;
+    if (size === 2) return '결승';
+    if (size === 4) return '준결승';
+    if (size === 8) return '8강';
+    return `${size}강`;
 };
 
 /** A knockout for `clubs`; round days are set by the career calendar (see scheduleSeason). */
@@ -48,7 +48,7 @@ export const createCup = (key: CupKey, name: string, rng: Rng, season: number, c
     const byes = fullSize - clubs.length;
     const rounds = Array.from({ length: count }, (_, index): CupRound => ({
         day: 0,
-        label: index === 0 && byes ? 'Opening round' : roundLabel(fullSize / 2 ** index),
+        label: index === 0 && byes ? '예선 라운드' : roundLabel(fullSize / 2 ** index),
         fixtures: [],
         byes: [],
     }));
@@ -89,7 +89,7 @@ export const advanceCup = (cup: Cup, round: CupRound, rng: Rng, season: number) 
 };
 
 export const penaltyScore = (f: Fixture, side: TeamSide = 0) =>
-    isCupFixture(f) && f.penalties ? `${f.penalties[side]}–${f.penalties[side === 0 ? 1 : 0]} on pens` : '';
+    isCupFixture(f) && f.penalties ? `${f.penalties[side]}–${f.penalties[side === 0 ? 1 : 0]} 승부차기` : '';
 
 /** Which competition a cup fixture belongs to (its id carries the cup's key). */
 export const cupKeyOf = (f: Fixture): CupKey | null => (isCupFixture(f) ? (f.id.includes('-intl-') ? 'intl' : 'cup') : null);

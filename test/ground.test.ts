@@ -51,17 +51,17 @@ describe('starting division and the ground', () => {
                 c.rngState = rng.state();
             } else trainingDay(cfg, c);
         }
-        expect(c.ledger.some((l) => l.label.startsWith('Gate receipts') && l.amount > 0)).toBe(true);
+        expect(c.ledger.some((l) => l.label.startsWith('입장 수입') && l.amount > 0)).toBe(true);
     }, 60_000);
 
     it('expanding needs the division and the money, then costs it', () => {
         const c = newCareer(cfg, 44, settings);
         const u = userClub(c);
-        expect(groundUpgrade(cfg, c)).toMatchObject({ size: 'town', blocked: 'Reach the League Two first' });
-        expect(expandGround(cfg, c)).toBe('Reach the League Two first');
+        expect(groundUpgrade(cfg, c)).toMatchObject({ size: 'town', blocked: expect.stringContaining('League Two') });
+        expect(expandGround(cfg, c)).toContain('League Two');
         u.tier = 3;
         u.budget = 100_000;
-        expect(groundUpgrade(cfg, c)!.blocked).toMatch(/Needs/);
+        expect(groundUpgrade(cfg, c)!.blocked).toMatch(/필요/);
         u.budget = 1_000_000;
         expect(expandGround(cfg, c)).toBeNull();
         expect(stadiumOf(c, u)).toMatchObject({ size: 'town', capacity: cfg.career.ground.town.capacity });

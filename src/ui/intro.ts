@@ -8,8 +8,8 @@ import type { TeamSide } from '../types';
 import { sizeLabel, type Conditions, type Stadium } from '../world/stadium';
 
 export const COMMENTATORS = {
-    lead: { name: 'Barnaby Quill', role: 'Commentary' },
-    colour: { name: 'Ottilie Marsh', role: 'Co-commentator · former keeper, two caps, one famous broken finger' },
+    lead: { name: 'Barnaby Quill', role: '중계' },
+    colour: { name: 'Ottilie Marsh', role: '해설 · 전 골키퍼, A매치 2회, 유명한 부러진 손가락 한 개' },
 };
 
 const pick = <T>(arr: T[], seed: number) => arr[Math.abs(seed) % arr.length]!;
@@ -29,55 +29,55 @@ export const introText = (
     careerStory: string[] = [],
 ): IntroLine[] => {
     const [h, a] = m.state.clubs;
-    const ground = stadium ? `${stadium.name}, ${sizeLabel(stadium.size).toLowerCase()}` : 'a neutral ground';
-    const crowd = stadium ? `${Math.round(stadium.capacity * stadium.fill).toLocaleString('en')} in` : 'a few faithful in';
+    const ground = stadium ? `${stadium.name}, ${sizeLabel(stadium.size)}` : '중립 구장';
+    const crowd = stadium ? `${Math.round(stadium.capacity * stadium.fill).toLocaleString('en')}명 입장` : '소수의 열성 팬';
     const welcome = pick(
         [
-            `Good afternoon from ${ground}, ${crowd}. ${h.name} against ${a.name}. I'm ${COMMENTATORS.lead.name}, and alongside me, ${COMMENTATORS.colour.name}.`,
-            `Welcome to ${ground}. ${h.name} host ${a.name}, and ${crowd} to see it. ${COMMENTATORS.lead.name} here with ${COMMENTATORS.colour.name}.`,
-            `${crowd} at ${ground} for ${h.name} and ${a.name}. ${COMMENTATORS.lead.name} with you, and ${COMMENTATORS.colour.name} beside me, gloves on as ever.`,
+            `${ground}에서 인사드립니다. ${crowd}. ${h.name} 대 ${a.name}. 저는 ${COMMENTATORS.lead.name}, 옆에는 ${COMMENTATORS.colour.name}입니다.`,
+            `${ground}에 오신 것을 환영합니다. ${h.name}이(가) ${a.name}을(를) 홈으로 맞이하고, ${crowd}. ${COMMENTATORS.lead.name}, 그리고 ${COMMENTATORS.colour.name}과 함께합니다.`,
+            `${ground}, ${h.name} 대 ${a.name}. ${crowd}. ${COMMENTATORS.lead.name}이(가) 함께하고, 옆에는 늘 그렇듯 장갑을 낀 ${COMMENTATORS.colour.name}이(가) 있습니다.`,
         ],
         seed,
     );
     const weather = conditions
         ? {
-              clear: 'Lovely conditions. No excuses today.',
-              rain: 'It is wet out there. Long passes will skid, keepers will hate it.',
-              snow: 'Snow! The ball will do strange things. I have seen keepers cry.',
-              fog: 'Fog rolling in. You will hear the shots before you see them.',
+              clear: '아름다운 날씨입니다. 오늘은 변명이 통하지 않습니다.',
+              rain: '바깥은 젖어 있습니다. 롱패스는 미끄러지고 골키퍼들은 싫어할 겁니다.',
+              snow: '눈입니다! 공이 이상하게 움직일 겁니다. 우는 골키퍼도 본 적 있습니다.',
+              fog: '안개가 밀려옵니다. 슛은 보기 전에 소리로 먼저 들을 겁니다.',
           }[conditions.weather]
         : '';
     const colour = `${weather} ${pick(
         [
-            `Referee ${m.state.referee.name} today: ${cfg.referee.styles[m.state.referee.style].note.toLowerCase()}`,
-            `${m.state.referee.name} has the whistle. ${cfg.referee.styles[m.state.referee.style].note}`,
+            `오늘의 심판은 ${m.state.referee.name}. ${cfg.referee.styles[m.state.referee.style].note}`,
+            `${m.state.referee.name} 심판이 휘슬을 쥡니다. ${cfg.referee.styles[m.state.referee.style].note}`,
         ],
         seed + 1,
     )}`.trim();
-    const [sh, sa] = styles.map((s) => cfg.ai.styles[s].label.toLowerCase());
+    const [sh, sa] = styles.map((s) => cfg.ai.styles[s].label);
     const clash: Record<string, string> = {
-        'high press:possession': 'The press against the patient passers. Somebody will crack.',
-        'possession:high press': 'Patient passing against a high press. Composure is everything.',
-        'low block:direct': 'A wall against the long ball. Expect plenty of headers.',
-        'direct:low block': 'Long balls into a packed box. The big lads will earn their wages.',
+        '하이 프레스:점유': '압박 대 인내심 있는 패서들. 누군가는 무너질 겁니다.',
+        '점유:하이 프레스': '하이 프레스에 맞서는 인내의 패스 플레이. 침착함이 전부입니다.',
+        '로우 블록:직선적': '롱볼에 맞서는 벽. 헤딩이 많이 나올 겁니다.',
+        '직선적:로우 블록': '빽빽한 박스 안으로 들어가는 롱볼. 덩치 큰 선수들이 밥값을 할 겁니다.',
     };
     const story = careerStory.length
         ? careerStory
         : [
               clash[`${sh}:${sa}`] ??
                   (sh === sa
-                      ? `Both sides play it ${sh}. A mirror match: whoever blinks first loses.`
-                      : `${h.name} play it ${sh}, ${a.name} ${sa}. Something has to give.`),
+                      ? `양 팀 모두 ${sh} 스타일입니다. 거울 대결, 먼저 눈 깜빡이는 쪽이 집니다.`
+                      : `${h.name}은(는) ${sh}, ${a.name}은(는) ${sa}. 어느 한쪽은 무너져야 합니다.`),
               conditions && conditions.time !== 'day'
                   ? conditions.time === 'night'
-                      ? 'Under the floodlights tonight.'
-                      : 'The light is fading already.'
+                      ? '오늘 밤은 조명 아래에서 치러집니다.'
+                      : '벌써 빛이 사위어 갑니다.'
                   : '',
               pick(
                   [
-                      `${cfg.match.rounds} rounds. Every one counts.`,
-                      'Space is the currency today. Spend it wisely.',
-                      'Make space, deny space, beat the clock.',
+                      `${cfg.match.rounds}라운드. 하나하나가 소중합니다.`,
+                      '오늘의 화폐는 공간입니다. 현명하게 쓰세요.',
+                      '공간을 만들고, 공간을 막고, 시계를 이기세요.',
                   ],
                   seed + 2,
               ),

@@ -40,14 +40,14 @@ export const describePlays = (m: Match, events: MatchEvent[]): Play[] => {
                 if (e.dribble && e.path.length > 1)
                     add(
                         'carry',
-                        `${name(e.id)} carries it ${e.path.length - 1} yard${e.path.length > 2 ? 's' : ''}${e.ability === 'sprint' ? ' at full sprint' : ''}`,
+                        `${name(e.id)} 선수가 공을 ${e.path.length - 1}칸 몰고 갑니다${e.ability === 'sprint' ? ' (전력 질주)' : ''}`,
                         team(e.id),
                     );
                 break;
             case 'trick':
                 add(
                     'duel',
-                    e.success ? `${name(e.by)} skins ${name(e.on)} with a trick` : `${name(e.on)} reads ${name(e.by)}'s trick`,
+                    e.success ? `${name(e.by)} 선수가 트릭으로 ${name(e.on)} 선수를 벗겨 냅니다` : `${name(e.on)} 선수가 ${name(e.by)} 선수의 트릭을 읽었습니다`,
                     team(e.success ? e.by : e.on),
                 );
                 break;
@@ -55,15 +55,15 @@ export const describePlays = (m: Match, events: MatchEvent[]): Play[] => {
                 add(
                     e.success ? 'turnover' : 'duel',
                     e.success
-                        ? `${name(e.by)} wins the ball off ${name(e.on)}${e.reaction ? '' : ' with a crunching tackle'}`
-                        : `${name(e.on)} rides ${name(e.by)}'s tackle`,
+                        ? `${name(e.by)} 선수가 ${name(e.on)} 선수에게서 공을 따냅니다${e.reaction ? '' : ' (강한 태클)'}`
+                        : `${name(e.on)} 선수가 ${name(e.by)} 선수의 태클을 버텨 냅니다`,
                     team(e.success ? e.by : e.on),
                 );
                 break;
             case 'kick': {
                 const d = Math.round(dist(e.from, e.target));
                 if (e.kind === 'shot') {
-                    add('shot', `${name(e.by)} shoots from ${d} yards`, team(e.by));
+                    add('shot', `${name(e.by)} 선수가 ${d}칸 거리에서 슛`, team(e.by));
                     break;
                 }
                 // pass: say how it ended if the next events tell us
@@ -72,60 +72,60 @@ export const describePlays = (m: Match, events: MatchEvent[]): Play[] => {
                 const recv = next.find((x) => x.t === 'receive' || x.t === 'header' || x.t === 'runOnto');
                 const loose = next.find((x) => x.t === 'loose' || x.t === 'out');
                 if (caught && caught.t === 'intercept')
-                    add('turnover', `${name(e.by)}'s pass is cut out by ${name(caught.by)}`, team(caught.by));
+                    add('turnover', `${name(e.by)} 선수의 패스를 ${name(caught.by)} 선수가 차단합니다`, team(caught.by));
                 else if (recv && (recv.t === 'receive' || recv.t === 'header' || recv.t === 'runOnto')) {
                     const to = recv.by;
                     add(
                         team(to) === team(e.by) ? 'pass' : 'turnover',
                         team(to) === team(e.by)
-                            ? `${name(e.by)} ${d > 14 ? 'lofts it' : 'passes'} to ${name(to)}${recv.t === 'header' ? ', who heads it on' : ''}`
-                            : `${name(e.by)}'s pass goes straight to ${name(to)}`,
+                            ? `${name(e.by)} 선수가 ${name(to)} 선수에게 ${d > 14 ? '띄워 줍니다' : '패스합니다'}${recv.t === 'header' ? ' (헤딩으로 연결)' : ''}`
+                            : `${name(e.by)} 선수의 패스가 ${name(to)} 선수에게 그대로 넘어갑니다`,
                         team(to),
                     );
-                } else if (loose) add('pass', `${name(e.by)}'s ${d > 14 ? 'long ball' : 'pass'} runs loose`, team(e.by));
+                } else if (loose) add('pass', `${name(e.by)} 선수의 ${d > 14 ? '롱볼' : '패스'}이 흘러갑니다`, team(e.by));
                 break;
             }
             case 'intercept':
-                if (e.success && e.block) add('save', `Blocked by ${name(e.by)}!`, team(e.by));
+                if (e.success && e.block) add('save', `${name(e.by)} 선수가 막아 냅니다!`, team(e.by));
                 break;
             case 'save':
-                add('save', e.held ? `Saved and held by ${name(e.by)}` : `Saved! ${name(e.by)} parries it`, team(e.by));
+                add('save', e.held ? `${name(e.by)} 선수가 선방하고 잡아 냅니다` : `선방! ${name(e.by)} 선수가 쳐 냅니다`, team(e.by));
                 break;
             case 'wide':
-                add('shot', 'Wide of the post', e.team);
+                add('shot', '골대 바깥으로 빗나감', e.team);
                 break;
             case 'goal': {
                 const [a, b] = m.state.score;
-                add('goal', `GOAL! ${name(e.scorer)} scores for ${short(e.team)} · ${a}–${b}`, e.team);
+                add('goal', `골! ${name(e.scorer)} 선수 득점 (${short(e.team)}) · ${a}–${b}`, e.team);
                 break;
             }
             case 'foul':
                 add(
                     'foul',
-                    `Foul by ${name(e.by)} on ${name(e.on)}${e.penalty ? ': PENALTY' : e.advantage ? ', advantage played' : ''}`,
+                    `${name(e.by)} 선수가 ${name(e.on)} 선수에게 파울${e.penalty ? ': 페널티' : e.advantage ? ' (어드밴티지 적용)' : ''}`,
                     team(e.by),
                 );
                 break;
             case 'card':
-                add('card', `${e.card === 'red' ? 'Red' : 'Yellow'} card for ${name(e.on)}`, team(e.on));
+                add('card', `${name(e.on)} 선수 ${e.card === 'red' ? '레드' : '옐로'}카드`, team(e.on));
                 break;
             case 'setpiece':
-                add('setpiece', `${e.kind === 'corner' ? 'Corner' : 'Free kick'} to ${short(e.team)}, ${name(e.taker)} to take`, e.team);
+                add('setpiece', `${short(e.team)} ${e.kind === 'corner' ? '코너킥' : '프리킥'}, 키커 ${name(e.taker)}`, e.team);
                 break;
             case 'sub':
-                add('sub', `Substitution ${short(e.team)}: ${name(e.on)} on for ${name(e.off)}`, e.team);
+                add('sub', `${short(e.team)} 교체: ${name(e.off)} 아웃, ${name(e.on)} 인`, e.team);
                 break;
             case 'pickup':
-                add('carry', `${name(e.by)} picks up the loose ball`, team(e.by));
+                add('carry', `${name(e.by)} 선수가 흐른 공을 잡습니다`, team(e.by));
                 break;
             case 'kickoff':
-                add('period', `Kick-off: ${short(e.team)}`, e.team);
+                add('period', `킥오프: ${short(e.team)}`, e.team);
                 break;
             case 'halftime':
-                add('period', `Half time · ${m.state.score[0]}–${m.state.score[1]}`, null);
+                add('period', `전반 종료 · ${m.state.score[0]}–${m.state.score[1]}`, null);
                 break;
             case 'fulltime':
-                add('period', `Full time · ${m.state.score[0]}–${m.state.score[1]}`, null);
+                add('period', `경기 종료 · ${m.state.score[0]}–${m.state.score[1]}`, null);
                 break;
             default:
                 break;

@@ -27,7 +27,7 @@ describe('live simulation', () => {
         const [a, b] = ctl.match.state.score;
         expect(lines.filter((l) => l.kind === 'goal')).toHaveLength(a + b);
         expect(ctl.stats.goals).toHaveLength(a + b);
-        expect(lines.some((l) => l.kind === 'period' && /Full time/.test(l.text))).toBe(true);
+        expect(lines.some((l) => l.kind === 'period' && /경기 종료/.test(l.text))).toBe(true);
     });
 
     it('finishes a match already under way', () => {

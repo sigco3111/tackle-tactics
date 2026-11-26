@@ -30,9 +30,9 @@ export const COUNTERS: Record<TeamStyle, TeamStyle | null> = {
 export const planEdge = (mine: TeamStyle, theirs: TeamStyle) => (COUNTERS[mine] === theirs ? 1 : COUNTERS[theirs] === mine ? -1 : 0);
 
 export const TALKS: Record<TeamTalk, { label: string; note: string }> = {
-    calm: { label: 'Keep it calm', note: 'Settles the mood towards steady. Never backfires.' },
-    fire: { label: 'Fire them up', note: 'Big lift — but an already buzzing squad can boil over.' },
-    demand: { label: 'Demand more', note: 'Works on a confident squad, stings a fragile one.' },
+    calm: { label: '침착하게', note: '분위기를 안정시킵니다. 역효과가 없습니다.' },
+    fire: { label: '투지를 불태워라', note: '큰 상승효과. 하지만 이미 들뜬 선수단은 과열될 수 있습니다.' },
+    demand: { label: '더 요구한다', note: '자신감 있는 선수단에는 통하고, 불안한 선수단에는 상처가 됩니다.' },
 };
 
 const hash = (s: string) => {
@@ -77,31 +77,31 @@ export const applyTalk = (cfg: GameConfig, c: Career, f: Fixture, p: Prep, rng: 
     p.applied = true;
     const t = cfg.career.prep.talk;
     const m = story(c).morale;
-    const derby = isDerby(c, f) ? ' before the derby' : '';
+    const derby = isDerby(c, f) ? ' (더비를 앞두고)' : '';
     switch (p.talk) {
         case 'calm': {
             const d = Math.sign(60 - m) * Math.min(Math.abs(60 - m), t.calm);
             shiftMorale(c, d);
-            return `A calm word${derby}. The squad settles.`;
+            return `차분한 한마디${derby}. 선수단이 안정됩니다.`;
         }
         case 'fire':
             if (m >= t.overheatAt && rng() < t.overheatChance) {
                 shiftMorale(c, t.overheat);
-                return `You fired them up${derby}, but they were already boiling. Heads are a little scrambled.`;
+                return `선수단을 독려했지만${derby} 이미 끓어오르던 상태였습니다. 머릿속이 조금 복잡해졌습니다.`;
             }
             shiftMorale(c, t.fire);
-            return `A thunderous team talk${derby}. They can't wait to get out there.`;
+            return `천둥 같은 팀 토크${derby}. 선수들이 당장 나가고 싶어 합니다.`;
         case 'demand':
             if (m >= 55) {
                 shiftMorale(c, t.demandUp);
-                return `You demanded more${derby}, and the squad rose to it.`;
+                return `더 높은 수준을 요구했고${derby} 선수단이 그에 응답했습니다.`;
             }
             shiftMorale(c, t.demandDown);
-            return `You demanded more${derby}. A fragile squad took it badly.`;
+            return `더 높은 수준을 요구했지만${derby} 불안한 선수단은 받아들이지 못했습니다.`;
     }
 };
 
-const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`;
+const ordinal = (n: number) => `${n}위`;
 
 /** The story of a career fixture, for the pre-match intro: derby, table, form, mood, the plan. */
 export const storyLines = (cfg: GameConfig, c: Career, f: Fixture, p: Prep): string[] => {
@@ -109,24 +109,24 @@ export const storyLines = (cfg: GameConfig, c: Career, f: Fixture, p: Prep): str
     const opp = opponentOf(c, f);
     const div = c.divisions.find((d) => d.clubs.includes(u.id));
     const lines: string[] = [];
-    if (isDerby(c, f)) lines.push(`It's the derby. ${opp.name} — the town has talked about nothing else all week.`);
+    if (isDerby(c, f)) lines.push(`더비입니다. ${opp.name}. 마을은 일주일 내내 이 얘기뿐이었습니다.`);
     if (isCupFixture(f)) {
         const cup = cupOfFixture(c, f);
         const round = cup?.rounds[f.round];
         const where =
             cup?.key === 'intl'
-                ? `${opp.name} are ${NATIONS[opp.nation].adjective} top-flight opposition.`
-                : `${opp.name} play in the ${leagueName(opp.nation, opp.tier)}.`;
-        lines.push(`${cup?.name ?? CUP_NAME}${round ? ` · ${round.label}` : ''}. ${where} A draw goes to penalties.`);
+                ? `${opp.name}은(는) ${NATIONS[opp.nation].adjective} 1부 리그 상대입니다.`
+                : `${opp.name}은(는) ${leagueName(opp.nation, opp.tier)} 소속입니다.`;
+        lines.push(`${cup?.name ?? CUP_NAME}${round ? ` · ${round.label}` : ''}. ${where} 무승부면 승부차기입니다.`);
     } else if (div) {
         const rows = table(div);
         const pos = (id: string) => rows.findIndex((r) => r.club === id) + 1;
         const played = rows.find((r) => r.club === u.id)?.p ?? 0;
         if (played > 0)
             lines.push(
-                `${u.name} sit ${ordinal(pos(u.id))}, ${opp.name} ${ordinal(pos(opp.id))}. ${pos(u.id) <= 2 ? 'Promotion places — hold on to them.' : pos(u.id) >= rows.length - 1 ? 'The drop zone. Points are everything.' : 'Every point counts from here.'}`,
+                `${u.name} ${ordinal(pos(u.id))}, ${opp.name} ${ordinal(pos(opp.id))}. ${pos(u.id) <= 2 ? '승격권입니다. 지켜 내세요.' : pos(u.id) >= rows.length - 1 ? '강등권입니다. 승점이 전부입니다.' : '지금부터는 모든 승점이 소중합니다.'}`,
             );
-        else lines.push(`The first match of the season. Everyone starts on zero.`);
+        else lines.push(`시즌 첫 경기입니다. 모두가 0에서 시작합니다.`);
         const form = (id: string) =>
             div.fixtures
                 .filter((x) => x.result && (x.home === id || x.away === id))
@@ -134,16 +134,16 @@ export const storyLines = (cfg: GameConfig, c: Career, f: Fixture, p: Prep): str
                 .map((x) => {
                     const [gh, ga] = x.result!;
                     const [mine, theirs] = x.home === id ? [gh, ga] : [ga, gh];
-                    return mine > theirs ? 'W' : mine === theirs ? 'D' : 'L';
+                    return mine > theirs ? '승' : mine === theirs ? '무' : '패';
                 })
                 .join('');
-        if (form(u.id) || form(opp.id)) lines.push(`Form: ${u.short} ${form(u.id) || '—'} · ${opp.short} ${form(opp.id) || '—'}.`);
+        if (form(u.id) || form(opp.id)) lines.push(`최근 폼: ${u.short} ${form(u.id) || '—'} · ${opp.short} ${form(opp.id) || '—'}.`);
     }
-    lines.push(`The squad is ${moraleLabel(story(c).morale).toLowerCase()}.`);
+    lines.push(`선수단 분위기: ${moraleLabel(story(c).morale)}.`);
     const theirs = styleOf(opp);
     const edge = planEdge(p.plan, theirs);
     lines.push(
-        `The plan: ${cfg.ai.styles[p.plan].label.toLowerCase()} against their ${cfg.ai.styles[theirs].label.toLowerCase()}${edge > 0 ? ' — it should hurt them.' : edge < 0 ? ' — a risky choice.' : '.'}`,
+        `플랜: ${cfg.ai.styles[p.plan].label}으로 상대의 ${cfg.ai.styles[theirs].label}에 맞섭니다${edge > 0 ? '. 상대에게 치명적일 겁니다.' : edge < 0 ? '. 위험한 선택입니다.' : '.'}`,
     );
     return lines;
 };

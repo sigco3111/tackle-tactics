@@ -26,7 +26,7 @@ import type { KickAbility, MoveAbility } from '../engine/match';
 import { movePoints, tackleChance } from '../engine/rules';
 import type { Cell, Piece, TeamSide } from '../types';
 import { KICK_MODES, MOVE_MODES, TARGET_MODES, type MatchController } from './controller';
-import { prewarmPlayer, resolveAnim, spriteStyle } from './sprites';
+import { imageReady, prewarmPlayer, resolveAnim, spriteStyle, stripUrl, paintWarm, warmStripsReady } from './sprites';
 import { groundSvg, turnArrowSvg } from './pixelShapes';
 
 /** Static SVG markup (the pixel markers), set once. */
@@ -46,6 +46,8 @@ type MatchViewOptions = { onExit: () => void; onSettings?: () => void; finishOdd
 
 export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds, knockout }: MatchViewOptions) => {
     const m = ctl.match;
+    const artReady = grain(false);
+    const artSlow = grain(false);
     const cfg = ctl.cfg;
     const { cols, rows, margin } = cfg.pitch;
     const C = cfg.camera.cellPx;
@@ -425,11 +427,42 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
             const crowd = !!carrier && !holds && cheb(p.pos, carrier.pos) <= 2;
             return `token team${p.team}${active ? ' active' : ''}${p.staggered ? ' staggered' : ''}${!p.reactionReady ? ' spent' : ''}${holds ? ' carrier' : ''}${crowd ? ' crowd' : ''}${hovered ? ' hovered' : ''}${seen === p.id ? ' inspected' : ''}`;
         });
-        const sprite = derived(
-            ctl.tick,
-            () =>
-                `${spriteStyle(cfg, p.player.sprite, currentAnim(p), p.facing, p.player)};width:${R}px;height:${R}px;left:${-R / 2}px;top:${-feet}px`,
-        );
+        // Restart the strip from frame 0 whenever a new animation starts (the element persists, so
+        // without this the CSS animation keeps its old phase). Swapping between two identically
+        // defined keyframes restarts it; the key changes per animation request, not per tick.
+        let animKey = '';
+        let animSeq = 0;
+        let shown = '';
+        let laidKey = '';
+        let curUrl = '';
+        let curW = 0;
+        let under: { url: string; w: number } | null = null;
+        const sprite = derived(ctl.tick, () => {
+            const name = currentAnim(p);
+            const o = ctl.anim.get(p.id);
+            const key = `${name}|${p.facing}|${o && o.until > performance.now() ? o.until : 0}`;
+            // keep the previous pose until the new strip is decoded: a not-yet-loaded strip would draw nothing
+            if (key !== animKey || !shown) {
+                if (!imageReady(stripUrl(p.player.sprite, name, p.facing, p.player), ctl.bump) && shown) return shown;
+                animKey = key;
+                animSeq++;
+            }
+            const url = stripUrl(p.player.sprite, name, p.facing, p.player);
+            const w = (cfg.animFrames[name] ?? 8) * R;
+            if (key !== laidKey) {
+                // the first paint of a swapped-in image can be a blank frame: keep the old strip underneath for two frames
+                if (curUrl && curUrl !== url) {
+                    under = { url: curUrl, w: curW };
+                    requestAnimationFrame(() => requestAnimationFrame(() => { under = null; ctl.bump(); }));
+                }
+                laidKey = key;
+            }
+            curUrl = url;
+            curW = w;
+            const layers = under ? `;background-image:url(${url}),url(${under.url});background-size:${w}px ${R}px,${under.w}px ${R}px` : '';
+            shown = `${spriteStyle(cfg, p.player.sprite, name, p.facing, p.player)}${layers};animation-name:${animSeq % 2 ? 'strip' : 'strip-b'};width:${R}px;height:${R}px;left:${-R / 2}px;top:${-feet}px`;
+            return shown;
+        });
         const kit = kitColor(m.state.clubs[p.team].kit);
         const stamina = derived(ctl.tick, () => p.stamina);
         const tokenStam = $if(derived(stamina, (n) => n < cfg.fatigue.tired)).$then(
@@ -489,8 +522,8 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
     const club = (t: TeamSide) => m.state.clubs[t];
     const scoreText = (t: TeamSide) => derived(ctl.tick, () => String(m.state.score[t]));
     const roundText = derived(ctl.tick, () => {
-        const half = m.state.round <= Math.floor(cfg.match.rounds / 2) ? '1st half' : '2nd half';
-        return `Round ${m.state.round} / ${cfg.match.rounds} · ${half}`;
+        const half = m.state.round <= Math.floor(cfg.match.rounds / 2) ? '전반' : '후반';
+        return `${m.state.round} / ${cfg.match.rounds} 라운드 · ${half}`;
     });
     const noTimer = cfg.match.timerSeconds <= 0;
     const timerStyle = derived(
@@ -510,10 +543,10 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                 const have = owned.includes(id);
                 const cd = cooldownLeft(p, id, m.state.round);
                 const passed = classLevel(p.player, a.cls) >= a.unlock;
-                const tip = `${a.label}: ${a.desc}${have ? '' : passed ? ' (not picked: they chose the other option at this level)' : ` (a choice at ${cfg.classes[a.cls].short} ${a.unlock}; has ${classLevel(p.player, a.cls)})`}`;
+                const tip = `${a.label}: ${a.desc}${have ? '' : passed ? ' (선택 안 함: 이 레벨에서 다른 선택지를 골랐습니다)' : ` (${cfg.classes[a.cls].short} ${a.unlock} 레벨에서 선택 가능, 현재 ${classLevel(p.player, a.cls)})`}`;
                 return html`<span class="chip ${have ? '' : 'locked'}" data-tip="${tip}">${a.label}${have ? (cd ? html` <b>${String(cd)}</b>` : html``) : html` <i>${passed ? '—' : `${cfg.classes[a.cls].short}${String(a.unlock)}`}</i>`}</span>`;
             })}
-            ${passives.map((id) => html`<span class="chip passive" data-tip="${cfg.passives[id].label} (passive): ${cfg.passives[id].desc}">${cfg.passives[id].label}</span>`)}
+            ${passives.map((id) => html`<span class="chip passive" data-tip="${cfg.passives[id].label} (패시브): ${cfg.passives[id].desc}">${cfg.passives[id].label}</span>`)}
         </div>`;
     };
 
@@ -529,17 +562,17 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const kit = kitColor(club(p.team).kit);
         const human = ctl.isHuman(p.team);
         const sprite = derived(recolorVersion, () => spriteStyle(cfg, p.player.sprite, 'idle', 'down', p.player));
-        const readiness = derived(ctl.tick, () => `Move ${movePoints(cfg, p)} · Reaction ${p.reactionReady ? 'ready' : 'spent'}`);
+        const readiness = derived(ctl.tick, () => `이동 ${movePoints(cfg, p)} · 반응 ${p.reactionReady ? '가능' : '소진'}`);
         const stamina = derived(ctl.tick, () => Math.round(p.stamina));
         return html`<div class="card${looking ? ' inspecting' : ''}" style="--kit:${kit}">
-            ${looking ? html`<div class="inspect-bar"><span>Inspecting</span><button class="ghost" ${on('click', () => inspected.set(null))}>Back <kbd>Esc</kbd></button></div>` : html``}
+            ${looking ? html`<div class="inspect-bar"><span>살펴보는 중</span><button class="ghost" ${on('click', () => inspected.set(null))}>뒤로 <kbd>Esc</kbd></button></div>` : html``}
             <div class="card-head">
                 <div class="portrait"><div class="sprite still" ${attr({ style: sprite })}></div></div>
                 <div>
                     <div class="pname">#${String(p.player.number)} ${p.player.name}</div>
-                    <div class="pmeta">${classLabel(cfg, p.player)} · ${club(p.team).short} · ${human ? 'You' : 'AI'}</div>
+                    <div class="pmeta">${classLabel(cfg, p.player)} · ${club(p.team).short} · ${human ? '나' : 'AI'}</div>
                     <div class="pmeta">${readiness}</div>
-                    <div class="pmeta stam">Stamina <span ${attr({ class: derived(stamina, (n) => `stam-bar ${n < cfg.fatigue.exhausted ? 'low' : n < cfg.fatigue.tired ? 'mid' : ''}`) })}><i ${attr({ style: derived(stamina, (n) => `width:${n}%`) })}></i></span> ${derived(stamina, String)}</div>
+                    <div class="pmeta stam">체력 <span ${attr({ class: derived(stamina, (n) => `stam-bar ${n < cfg.fatigue.exhausted ? 'low' : n < cfg.fatigue.tired ? 'mid' : ''}`) })}><i ${attr({ style: derived(stamina, (n) => `width:${n}%`) })}></i></span> ${derived(stamina, String)}</div>
                 </div>
             </div>
             ${human ? html`` : $render(derived(ctl.tick, () => kitList(p)))}
@@ -553,70 +586,70 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
     const hint = derived(
         combined([ctl.tick, ctl.awaitingHuman, ctl.hover, ctl.mode, ctl.tip, ctl.setupSel]),
         ([, awaiting, hover, mode]) => {
-            if (m.state.over) return 'Full time.';
+            if (m.state.over) return '경기 종료.';
             const sp = m.state.setPiece;
             if (sp?.stage === 'setup') {
-                const what = sp.kind === 'corner' ? 'Corner' : 'Free kick';
+                const what = sp.kind === 'corner' ? '코너킥' : '프리킥';
                 if (!awaiting)
-                    return `${what}: ${club(sp.next).short} ${sp.next === sp.team ? 'push players forward' : 'organise the defence'}…`;
+                    return `${what}: ${club(sp.next).short} ${sp.next === sp.team ? '선수들을 앞으로 올립니다' : '수비를 정비합니다'}…`;
                 const left = sp.left[sp.next];
                 const role =
                     sp.next === sp.team
-                        ? 'Lose your markers: put runners in space near goal.'
-                        : 'Mark their runners goal-side: cover the dangerous ones.';
-                return `${what} setup (${left} move${left === 1 ? '' : 's'} left). ${role} Click a highlighted player, then a cell. Space when you're happy.`;
+                        ? '마크맨을 따돌리세요. 골문 근처 공간에 달리는 선수를 두세요.'
+                        : '상대 공격수를 골문 쪽에서 막으세요. 위험한 선수부터 커버하세요.';
+                return `${what} 배치 (${left}번 남음). ${role} 강조된 선수를 클릭한 뒤 칸을 클릭하세요. 만족하면 스페이스를 누르세요.`;
             }
             const p = m.active();
             if (m.state.bonusTurn === p.id && awaiting && !mode) {
                 return m.state.phase === 'move'
-                    ? 'Extra turn: carry the ball clear of the scrum (or Space to stay).'
-                    : 'Extra turn: pass it on, or Space to keep it. Shooting waits for your normal turn.';
+                    ? '추가 턴: 몰려 있는 곳에서 공을 빼내세요(또는 스페이스로 제자리 유지).'
+                    : '추가 턴: 패스하거나, 스페이스로 공을 지키세요. 슛은 정상 턴까지 기다려야 합니다.';
             }
             if (sp?.stage === 'take' && sp.taker === p.id && awaiting) {
                 return sp.kind === 'corner'
-                    ? 'Corner: aim into the box — teammates within 2 of the drop attack a header. Or play it short.'
-                    : 'Free kick: shoot over the wall, whip it into the box, or play it short. Nobody can tackle you.';
+                    ? '코너킥: 박스 안을 겨냥하세요. 공이 떨어지는 곳에서 2칸 이내의 동료가 헤딩을 시도합니다. 짧게 이어 가도 됩니다.'
+                    : '프리킥: 벽 위로 슛하거나, 박스로 올리거나, 짧게 이어 가세요. 아무도 태클할 수 없습니다.';
             }
-            if (ctl.tip()) return 'Coach Marlow has a word. Enter to carry on — the clock is paused.';
+            if (ctl.tip()) return '말로 코치가 할 말이 있습니다. 엔터로 계속하세요. 시계는 멈춰 있습니다.';
             if (!awaiting)
                 return ctl.isHuman(p.team)
                     ? ctl.needsOrders(p)
-                        ? 'Resolving…'
-                        : `${p.player.name} keeps formation on their own (Focus: F)`
-                    : `${club(p.team).short} is thinking…`;
+                        ? '진행 중…'
+                        : `${p.player.name} 선수는 스스로 대형을 유지합니다 (포커스: F)`
+                    : `${club(p.team).short} 생각 중…`;
             const isCarrier = m.carrier()?.id === p.id;
             // the armed bar says what to click; the hint just restates the plan in words
             if (mode) {
                 if (isCarrier && hover && m.state.phase === 'act' && m.kickKind(p, hover, mode as KickAbility) === 'shot')
-                    return `${abilityDef(cfg, mode).label}: ${shotHint(p, hover, mode).replace(/^Shoot: /, '')}`;
+                    return `${abilityDef(cfg, mode).label}: ${shotHint(p, hover, mode).replace(/^슛: /, '')}`;
                 const what = MOVE_MODES.includes(mode)
-                    ? 'click a highlighted cell'
+                    ? '강조된 칸을 클릭'
                     : KICK_MODES.includes(mode)
-                      ? 'aim with the mouse, click to kick'
-                      : 'click a highlighted player';
-                return `${abilityDef(cfg, mode).label}: ${what}. Press it again to put it away.`;
+                      ? '마우스로 조준하고 클릭해서 차기'
+                      : '강조된 선수를 클릭';
+                return `${abilityDef(cfg, mode).label}: ${what}. 다시 누르면 취소됩니다.`;
             }
             if (m.state.phase === 'move') {
-                if (p.status.fouled) return 'You were fouled: free kick. Stay put (Space), then pass or shoot.';
+                if (p.status.fouled) return '파울을 당했습니다: 프리킥. 제자리에 머문 뒤(스페이스) 패스하거나 슛하세요.';
                 return isCarrier
-                    ? 'Dribble: click a cell (pink = a defender can react). Click yourself or Space to stay and pass/shoot.'
-                    : 'Move: click a blue cell. Click yourself or Space to hold position.';
+                    ? '드리블: 칸을 클릭하세요(분홍 = 수비수가 반응할 수 있음). 자신을 클릭하거나 스페이스로 제자리에 머문 채 패스/슛할 수 있습니다.'
+                    : '이동: 파란 칸을 클릭하세요. 자신을 클릭하거나 스페이스로 위치를 유지합니다.';
             }
             if (isCarrier) {
                 if (hover) {
                     const kind = m.kickKind(p, hover);
                     if (kind === 'shot') return shotHint(p, hover);
                     if (kind === 'pass')
-                        return `Pass ${dist(p.pos, hover) > cfg.ball.loftThreshold ? '(lofted: only contestable at take-off and landing)' : '(driven: contestable along the whole lane)'}`;
+                        return `패스 ${dist(p.pos, hover) > cfg.ball.loftThreshold ? '(띄운 공: 출발과 착지 때만 경합 가능)' : '(낮은 공: 경로 전체에서 경합 가능)'}`;
                 }
-                return 'Aim a pass at any cell, or the goal mouth to shoot. Space keeps the ball.';
+                return '원하는 칸에 패스하거나, 골문을 겨냥해 슛하세요. 스페이스는 공을 지킵니다.';
             }
             const c = m.carrier();
             if (c && c.team !== p.team && (m.canTackle(p) || m.abilityUsable(p, 'slide'))) {
-                const how = m.canTackle(p) ? 'Tackle' : 'Slide tackle';
-                return `${how} ${String(odds(p, c, !m.canTackle(p)))}%: win it and you go again, miss and they get a free turn to escape. Space ends your turn.`;
+                const how = m.canTackle(p) ? '태클' : '슬라이딩 태클';
+                return `${how} ${String(odds(p, c, !m.canTackle(p)))}%: 성공하면 한 번 더 행동하고, 실패하면 상대가 빠져나갈 무료 턴을 얻습니다. 스페이스로 턴을 마칩니다.`;
             }
-            return 'Use an ability, or Space to end your turn.';
+            return '능력을 쓰거나, 스페이스로 턴을 마치세요.';
         },
     );
 
@@ -624,8 +657,8 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
     const shotHint = (p: Piece, at: Cell, ability?: AbilityId) => {
         const o = m.shotOdds(p, at, ability as KickAbility | undefined);
         const pc = (v: number) => `${String(Math.round(v * 100))}%`;
-        const block = o.block >= 0.01 ? `, ${pc(o.block)} it's blocked` : '';
-        return `Shoot: ${pc(o.goal)} to score. ${pc(o.onTarget)} on target, the keeper saves ${pc(o.save)}${block}. The orange zone is where it may go.`;
+        const block = o.block >= 0.01 ? `, ${pc(o.block)} 확률로 수비에 막힘` : '';
+        return `슛: 득점 확률 ${pc(o.goal)}. 유효슛 ${pc(o.onTarget)}, 키퍼 선방 ${pc(o.save)}${block}. 주황색 구역이 공이 갈 수 있는 범위입니다.`;
     };
     /** Tackle odds as the engine rolls them (active challenge; a slide adds its bonus). */
     const odds = (p: Piece, c: Piece, slide = false) =>
@@ -639,12 +672,12 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
     /** What arming the ability asks of you next. */
     const kindOf = (id: AbilityId) =>
         MOVE_MODES.includes(id)
-            ? 'Pick a cell'
+            ? '칸 선택'
             : KICK_MODES.includes(id)
-              ? 'Aim a kick'
+              ? '킥 조준'
               : TARGET_MODES.includes(id)
-                ? 'Pick a player'
-                : 'Instant';
+                ? '선수 선택'
+                : '즉시 발동';
     const infoFor = grain<AbilityId | null>(null);
 
     const phaseAbilities = (p: Piece) => {
@@ -661,8 +694,8 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
     const inTurn = derived(inputPhase, (phase) => phase === 'move' || phase === 'act');
     const phaseStep = $if(inTurn).$then(
         () => html`<div class="steps">
-        <span ${attr({ class: derived(inputPhase, (phase) => (phase === 'move' ? 'on' : 'done')) })}>1 · Move</span><i></i>
-        <span ${attr({ class: derived(inputPhase, (phase) => (phase === 'act' ? 'on' : '')) })}>2 · Act</span>
+        <span ${attr({ class: derived(inputPhase, (phase) => (phase === 'move' ? 'on' : 'done')) })}>1 · 이동</span><i></i>
+        <span ${attr({ class: derived(inputPhase, (phase) => (phase === 'act' ? 'on' : '')) })}>2 · 행동</span>
     </div>`,
     );
 
@@ -672,13 +705,13 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
             if (sp?.stage !== 'setup') return { title: '', hint: '' };
             const left = sp.left[sp.next];
             return {
-                title: `${sp.kind === 'corner' ? 'Corner' : 'Free kick'} · ${sp.next === sp.team ? 'Attacking' : 'Defending'}`,
-                hint: `${left} placement${left === 1 ? '' : 's'} left · then the other side answers`,
+                title: `${sp.kind === 'corner' ? '코너킥' : '프리킥'} · ${sp.next === sp.team ? '공격' : '수비'}`,
+                hint: `배치 ${left}번 남음 · 이후 상대 팀이 대응합니다`,
             };
         });
         return html`<div class="dock-row setup-dock">
             <div class="setup-info"><b>${derived(text, (t) => t.title)}</b><span>${derived(text, (t) => t.hint)}</span></div>
-            <div class="core"><button class="primary" ${on('click', () => ctl.pass())}>Done placing <kbd>Space</kbd></button></div>
+            <div class="core"><button class="primary" ${on('click', () => ctl.pass())}>배치 완료 <kbd>Space</kbd></button></div>
         </div>`;
     };
     const TurnActions = () => {
@@ -690,7 +723,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
             const cls = derived(nowLane, (lane) => `dock-group ${lane === which ? 'now' : 'later'}`);
             return $if(derived(ids, (list) => list.length > 0)).$then(
                 () => html`<div ${attr({ class: cls })}>
-                <span class="dock-label">${which === 'before' ? '1 · Move' : '2 · Act'}</span>
+                <span class="dock-label">${which === 'before' ? '1 · 이동' : '2 · 행동'}</span>
                 <div class="slots">${$each(ids)
                     .$withKey((id) => id)
                     .$as(AbilitySlot)}</div>
@@ -709,16 +742,16 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                 const status = mode === id ? 'armed' : !inLane ? 'later' : cooldown > 0 ? 'wait' : reason ? 'blocked' : 'ready';
                 const label =
                     status === 'armed'
-                        ? 'Armed'
+                        ? '준비됨'
                         : status === 'later'
                           ? phase === 'move'
-                              ? 'After you move'
-                              : 'Before moving only'
+                              ? '이동한 뒤'
+                              : '이동 전에만'
                           : status === 'wait'
-                            ? `Ready in ${String(cooldown)} round${cooldown > 1 ? 's' : ''}`
+                            ? `${String(cooldown)}라운드 후 사용 가능`
                             : status === 'blocked'
-                              ? (reason ?? 'Not now')
-                              : 'Ready';
+                              ? (reason ?? '지금은 불가')
+                              : '사용 가능';
                 const index = inLane ? phaseAbilities(p).indexOf(id) + 1 : 0;
                 return { state: status, label, odds: slideOdds(p, id, status), key: index ? String(index) : '', cooldown };
             });
@@ -732,8 +765,8 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
             });
             // the cost, always visible: how long it recharges after use
             const cost = a.cooldown
-                ? html`<span class="cost" title="Recharges for ${String(a.cooldown)} round${a.cooldown > 1 ? 's' : ''} after use">CD ${String(a.cooldown)}</span>`
-                : html`<span class="cost free" title="No cooldown: usable every turn">Free</span>`;
+                ? html`<span class="cost" title="사용 후 ${String(a.cooldown)}라운드 동안 재충전">쿨 ${String(a.cooldown)}</span>`
+                : html`<span class="cost free" title="쿨다운 없음: 매 턴 사용 가능">무료</span>`;
             const keyLabel = derived(state, (s) => s.key);
             return html`<button ${attr({ class: derived(state, (s) => `aslot ${s.state}`) })} ${enter} ${leave} ${on('click', () => ctl.useAbility(id))}>
                 <span class="hk" ${attr({ hidden: derived(keyLabel, (k) => !k) })}>${keyLabel}</span>
@@ -749,7 +782,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const hold = derived(ctl.tick, () => {
             if (m.state.over) return '';
             const carrying = m.carrier()?.id === m.active().id;
-            return m.state.phase === 'move' ? (carrying ? 'Stay & kick' : 'Hold') : carrying ? 'Keep ball' : 'End turn';
+            return m.state.phase === 'move' ? (carrying ? '제자리 킥' : '대기') : carrying ? '공 지키기' : '턴 종료';
         });
         const standingOdds = derived(ctl.tick, () => {
             const carrier = m.carrier();
@@ -759,17 +792,17 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         });
         return html`<div class="dock-row turn-dock">
             ${group('before')}${group('after')}
-            ${$if(derived(owned, (list) => !list.length)).$then(() => html`<div class="dock-group"><span class="dock-label">Abilities</span><span class="no-abilities">None yet. They unlock as this player levels up.</span></div>`)}
+            ${$if(derived(owned, (list) => !list.length)).$then(() => html`<div class="dock-group"><span class="dock-label">능력</span><span class="no-abilities">아직 없습니다. 이 선수가 레벨업하면 열립니다.</span></div>`)}
             ${$if(derived(passives, (list) => list.length > 0)).$then(
                 () =>
-                    html`<div class="dock-group passives"><span class="dock-label">Always on</span><div class="passive-list">${$each(passives).$as((id) => html`<span class="passive" title="${cfg.passives[id].desc}">${cfg.passives[id].label}</span>`)}</div></div>`,
+                    html`<div class="dock-group passives"><span class="dock-label">상시 적용</span><div class="passive-list">${$each(passives).$as((id) => html`<span class="passive" title="${cfg.passives[id].desc}">${cfg.passives[id].label}</span>`)}</div></div>`,
             )}
             <div class="dock-group core">
-                <span class="dock-label">Turn</span>
+                <span class="dock-label">턴</span>
                 <div class="slots">
-                    ${$if(derived(standingOdds, (chance) => chance !== null)).$then(() => html`<button class="tbtn warn" title="Chance to win the ball" ${on('click', () => ctl.input({ t: 'act', d: { kind: 'tackle' } }))}><b>Tackle ${derived(standingOdds, String)}%</b><kbd>T</kbd></button>`)}
+                    ${$if(derived(standingOdds, (chance) => chance !== null)).$then(() => html`<button class="tbtn warn" title="공을 빼앗을 확률" ${on('click', () => ctl.input({ t: 'act', d: { kind: 'tackle' } }))}><b>태클 ${derived(standingOdds, String)}%</b><kbd>T</kbd></button>`)}
                     <button class="tbtn" ${on('click', () => ctl.pass())}><b>${hold}</b><kbd>Space</kbd></button>
-                    <button class="tbtn ghost" title="Let the AI play this action" ${on('click', () => ctl.input({ t: 'auto' }))}><b>Auto</b><kbd>A</kbd></button>
+                    <button class="tbtn ghost" title="이 행동을 AI가 대신 수행" ${on('click', () => ctl.input({ t: 'auto' }))}><b>자동</b><kbd>A</kbd></button>
                 </div>
             </div>
         </div>`;
@@ -792,11 +825,11 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const reason = m.blockReason(p, id);
         const cd = cooldownLeft(p, id, m.state.round);
         return html`<div class="ab-info">
-            <div class="ab-head"><div><b>${a.label}</b><small>${laneOf(id) === 'before' ? 'Before moving' : 'After moving'} · ${kindOf(id)}${a.cooldown ? ` · recharges for ${a.cooldown} round${a.cooldown > 1 ? 's' : ''}` : ''}</small></div></div>
+            <div class="ab-head"><div><b>${a.label}</b><small>${laneOf(id) === 'before' ? '이동 전' : '이동 후'} · ${kindOf(id)}${a.cooldown ? ` · ${a.cooldown}라운드 재충전` : ''}</small></div></div>
             <p>${a.desc}</p>
-            <p class="how"><b>How:</b> ${a.how}</p>
-            ${id === 'slide' && m.carrier() && m.carrier()!.team !== p.team ? html`<p class="odds">Chance to win the ball: <b>${String(odds(p, m.carrier()!, true))}%</b>${m.canTackle(p) ? ` (a standing tackle: ${String(odds(p, m.carrier()!))}%)` : ''}</p>` : html``}
-            ${cd > 0 ? html`<p class="why">Recharging: ready in ${String(cd)} round${cd > 1 ? 's' : ''}.</p>` : reason ? html`<p class="why">Not now: ${reason}.</p>` : html``}
+            <p class="how"><b>사용법:</b> ${a.how}</p>
+            ${id === 'slide' && m.carrier() && m.carrier()!.team !== p.team ? html`<p class="odds">공을 빼앗을 확률: <b>${String(odds(p, m.carrier()!, true))}%</b>${m.canTackle(p) ? ` (일반 태클: ${String(odds(p, m.carrier()!))}%)` : ''}</p>` : html``}
+            ${cd > 0 ? html`<p class="why">재충전 중: ${String(cd)}라운드 후 사용 가능.</p>` : reason ? html`<p class="why">지금은 불가: ${reason}.</p>` : html``}
         </div>`;
     });
 
@@ -830,7 +863,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         .$withKey((q) => q.key)
         .$as(queueItem)}</div>`;
 
-    const log = html`<div class="log"><h5>Commentary <small>B. Quill</small></h5><ul>
+    const log = html`<div class="log"><h5>해설 <small>B. 퀼</small></h5><ul>
         ${$each(derived(ctl.commentary, (lines) => lines.slice(0, 8)))
             .$withKey((line) => line.id)
             .$as(
@@ -877,8 +910,8 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         t
             ? html`<div class="tip">
         <div class="coach"><div class="sprite" style="${spriteStyle(cfg, 'coach', 'shout', 'down')};width:96px;height:96px;background-size:${String((cfg.animFrames.shout ?? 12) * 96)}px 96px;--strip:${String((cfg.animFrames.shout ?? 12) * 96)}px"></div></div>
-        <div class="tip-body"><small>Coach Marlow</small><h3>${t.title}</h3><p>${t.text}</p>
-            <div class="tip-actions"><button class="ghost" ${on('click', () => ctl.dismissTip(true))}>No more tips</button><button class="primary" ${on('click', () => ctl.dismissTip())}>Got it <kbd>Enter</kbd></button></div></div>
+        <div class="tip-body"><small>말로 코치</small><h3>${t.title}</h3><p>${t.text}</p>
+            <div class="tip-actions"><button class="ghost" ${on('click', () => ctl.dismissTip(true))}>팁 그만 보기</button><button class="primary" ${on('click', () => ctl.dismissTip())}>알겠습니다 <kbd>Enter</kbd></button></div></div>
     </div>`
             : html``,
     );
@@ -886,13 +919,13 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
     const lessonPanel = derived(combined([ctl.lesson, ctl.tutorialDone]), ([l, done]) => {
         const coach = html`<div class="coach"><div class="sprite" style="${spriteStyle(cfg, 'coach', 'shout', 'down')};width:96px;height:96px;background-size:${String((cfg.animFrames.shout ?? 12) * 96)}px 96px;--strip:${String((cfg.animFrames.shout ?? 12) * 96)}px"></div></div>`;
         if (done)
-            return html`<div class="tip lesson done">${coach}<div class="tip-body"><small>Training complete</small><h3>You're ready.</h3>
-            <p>That's the whole game: make space, move the ball, deny space, beat the clock. A quick match against Easy AI is a good next step, then a career.</p>
-            <div class="tip-actions"><button class="primary" ${on('click', onExit)}>Back to menu</button></div></div></div>`;
+            return html`<div class="tip lesson done">${coach}<div class="tip-body"><small>훈련 완료</small><h3>준비됐습니다.</h3>
+            <p>이게 게임의 전부입니다. 공간을 만들고, 공을 움직이고, 공간을 막고, 시간과 싸우세요. 다음 단계로는 쉬운 AI와 빠른 경기를 해 보고, 그다음 커리어를 시작해 보세요.</p>
+            <div class="tip-actions"><button class="primary" ${on('click', onExit)}>메뉴로 돌아가기</button></div></div></div>`;
         if (!l) return html``;
-        return html`<div class="tip lesson">${coach}<div class="tip-body"><small>Lesson ${String(l.i + 1)} of ${String(l.n)} · Coach Marlow</small><h3>${l.title}</h3><p>${l.text}</p>
+        return html`<div class="tip lesson">${coach}<div class="tip-body"><small>레슨 ${String(l.i + 1)} / ${String(l.n)} · 말로 코치</small><h3>${l.title}</h3><p>${l.text}</p>
             ${l.retry ? html`<p class="lesson-retry">${l.retry}</p>` : html``}${l.praise ? html`<p class="lesson-praise">✓ ${l.praise}</p>` : html``}
-            <div class="tip-actions"><button class="ghost" ${on('click', onExit)}>Leave training</button>${l.info ? html`<button class="primary" ${on('click', () => ctl.nextLesson())}>Continue <kbd>Enter</kbd></button>` : html``}</div></div></div>`;
+            <div class="tip-actions"><button class="ghost" ${on('click', onExit)}>훈련 나가기</button>${l.info ? html`<button class="primary" ${on('click', () => ctl.nextLesson())}>계속 <kbd>Enter</kbd></button>` : html``}</div></div></div>`;
     });
 
     // ------------------------------------------------------------ pre-match intro
@@ -937,7 +970,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const c = club(t);
         const danger = dangerMan(m, t);
         return html`<div class="intro-side" style="--kit:${kitColor(c.kit)}">
-            <h3><i class="kit-dot"></i>${c.name}${ctl.isHuman(t) ? html` <em class="you">You</em>` : html``}</h3>
+            <h3><i class="kit-dot"></i>${c.name}${ctl.isHuman(t) ? html` <em class="you">나</em>` : html``}</h3>
             <p>${c.formationId} · ${cfg.ai.styles[ctl.teamStyle(t)].label}</p>
             ${danger ? html`<p class="danger">★ ${danger.player.name} <span>${cfg.classes[danger.player.cls].short}</span></p>` : html``}
         </div>`;
@@ -948,16 +981,16 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const facts: [string, string][] = [
             ...(st
                 ? ([
-                      ['Ground', st.name],
-                      ['Capacity', st.capacity.toLocaleString('en')],
+                      ['경기장', st.name],
+                      ['수용 인원', st.capacity.toLocaleString('ko-KR')],
                   ] as [string, string][])
                 : []),
-            ['Conditions', ctl.opts.conditions ? conditionsLabel(ctl.opts.conditions) : 'Fair'],
-            ['Referee', `${m.state.referee.name} · ${cfg.referee.styles[m.state.referee.style].label}`],
+            ['컨디션', ctl.opts.conditions ? conditionsLabel(ctl.opts.conditions) : '양호'],
+            ['심판', `${m.state.referee.name} · ${cfg.referee.styles[m.state.referee.style].label}`],
         ];
         return html`<div class="intro">
             <div class="intro-card">
-                <div class="intro-strip"><span class="live">● Live</span><span>Pre-match</span></div>
+                <div class="intro-strip"><span class="live">● 생중계</span><span>경기 전</span></div>
                 <h2 class="intro-title"><span style="--kit:${kitColor(h.kit)}">${h.name}</span><em>vs</em><span style="--kit:${kitColor(a.kit)}">${a.name}</span></h2>
                 <div class="intro-grid">
                     <div class="intro-squads">${introPitch()}<div class="intro-sides">${introSide(0)}${introSide(1)}</div></div>
@@ -973,14 +1006,14 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                     </div>
                 </div>
                 <footer class="intro-foot">
-                    <button class="primary" ${on('click', () => ctl.introDone())}>Kick off <kbd>Enter</kbd></button>
+                    <button class="primary" ${on('click', () => artReady() && ctl.introDone())}>${derived(combined([artReady, artSlow]), ([r, slow]) => (r ? '킥오프' : slow ? '아트 로딩 실패, 다시 시도 중…' : '아트 로딩 중…'))} <kbd>Enter</kbd></button>
                 </footer>
             </div>
         </div>`;
     };
 
     const toast = derived(ctl.toast, (t) => (t ? html`<div class="toast">${t}</div>` : html``));
-    const focusChip = html`<button class="ghost focus-chip" title="Which of your players ask for orders" ${on('click', () => ctl.cycleControl())}>Focus: ${derived(controlMode, (mode) => CONTROL_MODES.find((c) => c.id === mode)!.label)} <kbd>F</kbd></button>`;
+    const focusChip = html`<button class="ghost focus-chip" title="어떤 선수에게 지시를 내릴지 정합니다" ${on('click', () => ctl.cycleControl())}>집중: ${derived(controlMode, (mode) => CONTROL_MODES.find((c) => c.id === mode)!.label)} <kbd>F</kbd></button>`;
 
     const requestExit = () => {
         if (!finishOdds || m.state.over) return onExit();
@@ -999,15 +1032,15 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const percent = exitPrompt()!.chance * 100;
         const chance = percent > 0 && percent < 1 ? '<1%' : percent < 100 && percent > 99 ? '>99%' : `${Math.round(percent)}%`;
         return Dialog({
-            label: 'Leave match?',
+            label: '경기를 나가시겠습니까?',
             dismiss: cancelExit,
             children: html`<div class="modal-body match-exit">
-            <header><h2>Leave match?</h2></header>
+            <header><h2>경기를 나가시겠습니까?</h2></header>
             <div class="modal-scroll">
-                <p>The rest of the match will be simulated from the current score. The final result will count in your career.</p>
-                <div class="match-exit-odds"><strong>${chance}</strong><span>Estimated chance of winning if simulated</span></div>
+                <p>남은 경기는 현재 스코어에서 시뮬레이션됩니다. 최종 결과는 커리어에 반영됩니다.</p>
+                <div class="match-exit-odds"><strong>${chance}</strong><span>시뮬레이션 시 예상 승리 확률</span></div>
             </div>
-            <footer><button class="ghost" autofocus ${on('click', cancelExit)}>Keep playing</button><button class="warn" ${on('click', onExit)}>Simulate and leave</button></footer>
+            <footer><button class="ghost" autofocus ${on('click', cancelExit)}>계속 플레이</button><button class="warn" ${on('click', onExit)}>시뮬레이션하고 나가기</button></footer>
         </div>`,
         });
     };
@@ -1076,7 +1109,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         /** Why this pair can't join the plan: the usual rules, plus what's already planned. */
         const pairProblem = (side: TeamSide, pair: Pair, plan: Pair[]) => {
             if (plan.length && m.subsLeft(side) - ctl.pendingSubs().filter((x) => x.team === side).length - plan.length <= 0)
-                return 'No substitutions left';
+                return '남은 교체 횟수가 없습니다';
             return ctl.subProblem(side, pair.off, pair.on);
         };
         const availability = derived(
@@ -1086,26 +1119,26 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                 const n = pick.plan.length;
                 // straight away at half time or on your own turn (if that player isn't busy), otherwise at the next break
                 const later = pick.plan.filter((x) => !ctl.canSubNow(side, x.off, x.on)).length;
-                const what = `Make ${n === 1 ? 'the change' : `${n} changes`}`;
+                const what = n === 1 ? '교체 실행' : `${n}명 교체 실행`;
                 return {
                     disabled: !mine || n === 0,
                     label:
                         n === 0
-                            ? 'Make the changes'
+                            ? '교체 실행'
                             : later === 0
                               ? what
                               : later === n
-                                ? `${what} at the next break`
-                                : `${what} (${later} at the next break)`,
+                                ? `${what} (다음 휴식 때)`
+                                : `${what} (${later}명은 다음 휴식 때)`,
                     hint:
                         pick.msg ??
                         (!mine
-                            ? 'Watching: the AI manages its own bench.'
+                            ? '관전 중: AI가 자체적으로 벤치를 운영합니다.'
                             : pick.off || pick.on
-                              ? `Now pick who ${pick.off ? 'comes on' : 'goes off'}.`
+                              ? `이제 ${pick.off ? '들어올' : '나갈'} 선수를 고르세요.`
                               : n
-                                ? 'Add another change, or make them. Click a planned player to drop that change.'
-                                : 'Pick one off, one on; repeat for more changes. Tired players move less (under 50) and react worse (under 25).'),
+                                ? '교체를 더 추가하거나 실행하세요. 계획된 선수를 클릭하면 그 교체가 취소됩니다.'
+                                : '나갈 선수 한 명, 들어올 선수 한 명을 고르세요. 더 교체하려면 반복하세요. 지친 선수는 덜 움직이고(50 미만) 반응도 나빠집니다(25 미만).'),
                 };
             },
         );
@@ -1151,10 +1184,10 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
             if (!failed.length) showBench.set(false);
         };
         return html`<div class="modal-body bench-panel">
-            <header><h2>Bench · ${derived(team, (side) => club(side).short)}</h2><span class="subs-left">${left} of ${String(cfg.subs.max)} substitutions left</span><button class="ghost" ${on('click', () => showBench.set(false))}>Close <kbd>Esc</kbd></button></header>
+            <header><h2>벤치 · ${derived(team, (side) => club(side).short)}</h2><span class="subs-left">교체 ${left} / ${String(cfg.subs.max)}회 남음</span><button class="ghost" ${on('click', () => showBench.set(false))}>닫기 <kbd>Esc</kbd></button></header>
             <div class="modal-scroll">
                 <div class="bench-grid">
-                    <section><h4>On the pitch <small>tiredest first</small></h4><ul class="bench-list">${$each(onPitch)
+                    <section><h4>경기장 <small>지친 순서</small></h4><ul class="bench-list">${$each(onPitch)
                         .$withKey((p) => p.id)
                         .$as((p) => {
                             const sprite = derived(recolorVersion, () => spriteStyle(cfg, p.player.sprite, 'idle', 'down', p.player));
@@ -1165,7 +1198,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                             <span ${attr({ class: derived(stamina, (n) => `stam-bar ${n < cfg.fatigue.exhausted ? 'low' : n < cfg.fatigue.tired ? 'mid' : ''}`) })}><i ${attr({ style: derived(stamina, (n) => `width:${n}%`) })}></i></span><span class="num">${derived(stamina, String)}</span>
                         </li>`;
                         })}</ul></section>
-                    <section><h4>Bench</h4>${$if(derived(bench, (players) => players.length > 0))
+                    <section><h4>벤치</h4>${$if(derived(bench, (players) => players.length > 0))
                         .$then(
                             () => html`<ul class="bench-list">
                         ${$each(bench)
@@ -1174,20 +1207,20 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                                 const sprite = derived(recolorVersion, () => spriteStyle(cfg, p.sprite, 'idle', 'down', p));
                                 return html`<li ${attr({ class: rowClass('on', p.id) })} ${choose('on', p.id)}>
                                 <div class="sprite still" ${attr({ style: sprite })}></div>
-                                <b>#${String(p.number)} ${p.name}</b><span class="cl">${classLabel(cfg, p)}</span><span class="num">Lv ${String(p.level)}</span>
+                                <b>#${String(p.number)} ${p.name}</b><span class="cl">${classLabel(cfg, p)}</span><span class="num">레벨 ${String(p.level)}</span>
                             </li>`;
                             })}
                     </ul>`,
                         )
-                        .$else(() => html`<p class="muted">Nobody left on the bench.</p>`)}</section>
+                        .$else(() => html`<p class="muted">벤치에 남은 선수가 없습니다.</p>`)}</section>
                 </div>
             </div>
             <div class="bench-plan">${$each(plan).$as(
                 (x) =>
-                    html`<span class="plan-chip"><b>${playerName(team(), x.off)}</b> off · <b>${playerName(team(), x.on)}</b> on<button type="button" class="ghost" title="Drop this change" ${on('click', () => unplan(x))}>×</button></span>`,
+                    html`<span class="plan-chip"><b>${playerName(team(), x.off)}</b> 아웃 · <b>${playerName(team(), x.on)}</b> 인<button type="button" class="ghost" title="이 교체 취소" ${on('click', () => unplan(x))}>×</button></span>`,
             )}</div>
             <footer class="bench-foot">
-                ${$if(derived(queued, (list) => list.length > 0)).$then(() => html`<span class="bench-queued">Next break: ${derived(queued, (list) => list.join(' · '))}</span>`)}
+                ${$if(derived(queued, (list) => list.length > 0)).$then(() => html`<span class="bench-queued">다음 휴식: ${derived(queued, (list) => list.join(' · '))}</span>`)}
                 <span class="muted">${derived(availability, (a) => a.hint)}</span>
                 <button class="primary" ${attr({ disabled: derived(availability, (a) => a.disabled) })} ${on('click', go)}>${derived(availability, (a) => a.label)}</button>
             </footer>
@@ -1213,7 +1246,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
                 return;
             }
             if (ctl.intro()) {
-                if (e.key === 'Enter' || e.code === 'Space' || e.key === 'Escape') {
+                if (artReady() && (e.key === 'Enter' || e.code === 'Space' || e.key === 'Escape')) {
                     e.preventDefault();
                     ctl.introDone();
                 }
@@ -1268,6 +1301,22 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         const unwatchInput = ctl.awaitingHuman.subscribe(() => infoFor.set(null));
         const unwatchInspect = activePiece.subscribe(() => inspected.set(null));
         for (const p of m.state.pieces) prewarmPlayer(p.player.sprite, p.player, p.player.cls === 'keeper');
+        // kickoff waits for the warm strips and never starts with them unfinished: failed loads are
+        // retried on every check, and after 15s the intro says so instead of kicking off anyway
+        const warmList = m.state.pieces.map((p) => ({ sprite: p.player.sprite, player: p.player, keeper: p.player.cls === 'keeper' }));
+        const artStart = performance.now();
+        const checkArt = () => {
+            if (warmStripsReady(warmList, checkArt)) {
+                if (!artReady()) paintWarm(warmList);
+                artReady.set(true);
+            }
+            else if (performance.now() - artStart > 15000) artSlow.set(true);
+        };
+        const artTimer = setInterval(() => {
+            checkArt();
+            if (artReady()) clearInterval(artTimer);
+        }, 150);
+        checkArt();
         const wheel = (e: WheelEvent) => {
             if (!(e.target as HTMLElement).closest('.viewport')) return;
             e.preventDefault();
@@ -1332,6 +1381,7 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
             window.removeEventListener('click', click, true);
             window.removeEventListener('contextmenu', noMenu);
             unRecolor();
+            clearInterval(artTimer);
             unwatchTurn();
             unwatchInput();
             unwatchInspect();
@@ -1390,34 +1440,34 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
         </div>
 
         <header class="hud-top">
-            <div class="team t0 ${isLightKit(club(0).kit) ? 'light' : ''}" style="--kit:${kitColor(club(0).kit)}"><span class="team-name">${club(0).name}</span>${ctl.isHuman(0) ? html`<em>you</em>` : html``}</div>
+            <div class="team t0 ${isLightKit(club(0).kit) ? 'light' : ''}" style="--kit:${kitColor(club(0).kit)}"><span class="team-name">${club(0).name}</span>${ctl.isHuman(0) ? html`<em>나</em>` : html``}</div>
             <div class="score"><b>${scoreText(0)}</b><span>–</span><b>${scoreText(1)}</b></div>
-            <div class="team t1 ${isLightKit(club(1).kit) ? 'light' : ''}" style="--kit:${kitColor(club(1).kit)}">${ctl.isHuman(1) ? html`<em>you</em>` : html``}<span class="team-name">${club(1).name}</span></div>
+            <div class="team t1 ${isLightKit(club(1).kit) ? 'light' : ''}" style="--kit:${kitColor(club(1).kit)}">${ctl.isHuman(1) ? html`<em>나</em>` : html``}<span class="team-name">${club(1).name}</span></div>
             <div class="round">${roundText}</div>
-            ${noTimer ? html`<div class="round notimer">No timer · take your time</div>` : html`<div class="timer"><i ${attr({ style: timerStyle })}></i></div>`}
+            ${noTimer ? html`<div class="round notimer">타이머 없음 · 천천히 하세요</div>` : html`<div class="timer"><i ${attr({ style: timerStyle })}></i></div>`}
         </header>
         ${$render(caption)}
 
         <aside class="hud-left">${$render(activeCard)}
             <div class="legend">
-                <div><i class="sw move"></i>Movement</div>
-                <div><i class="sw scatter"></i>Ball may land</div>
-                <div><i class="sw danger"></i>Reaction zone</div>
-                <div><i class="sw active"></i>Active player</div>
-                <div><i class="sw pick"></i>Pick a target / run-in zone</div>
-                <div ${on('click', () => setPref('showZoc', !prefs().showZoc))} class="legend-toggle"><i class="sw zoc"></i>Their zone of control <kbd>Z</kbd></div>
-                <div><i class="sw zoc-own"></i>Your cover</div>
-                <div class="legend-cam">Drag or arrows: move the view · wheel: zoom · <kbd>C</kbd> recentre</div>
+                <div><i class="sw move"></i>이동 범위</div>
+                <div><i class="sw scatter"></i>공이 떨어질 수 있는 곳</div>
+                <div><i class="sw danger"></i>반응 구역</div>
+                <div><i class="sw active"></i>현재 선수</div>
+                <div><i class="sw pick"></i>목표 선택 / 침투 구역</div>
+                <div ${on('click', () => setPref('showZoc', !prefs().showZoc))} class="legend-toggle"><i class="sw zoc"></i>상대 압박 구역 <kbd>Z</kbd></div>
+                <div><i class="sw zoc-own"></i>우리 커버</div>
+                <div class="legend-cam">드래그 또는 방향키: 화면 이동 · 휠: 확대/축소 · <kbd>C</kbd> 가운데로</div>
             </div>
         </aside>
         <aside class="hud-right">
-            <div class="tools" role="group" aria-label="Match controls">
-                <button type="button" class="exit" title="Leave the match" ${on('click', requestExit)}>Menu</button>
+            <div class="tools" role="group" aria-label="경기 컨트롤">
+                <button type="button" class="exit" title="경기 나가기" ${on('click', requestExit)}>메뉴</button>
                 ${MatchRadioButton(showMusic)}
-                <button type="button" title="Playbook (H)" aria-label="Playbook" ${on('click', () => showPlaybook.update((v) => !v))}>?</button>
-                <button type="button" title="Bench & substitutions (B)" aria-label="Bench and substitutions" ${on('click', () => showBench.update((v) => !v))}>⇄</button>
-                <button type="button" title="Pause (P)" aria-label="Pause" ${on('click', () => ctl.togglePause())}>❚❚</button>
-                ${onSettings ? html`<button type="button" title="Settings" aria-label="Settings" ${on('click', onSettings)}>⚙</button>` : html``}
+                <button type="button" title="전술 노트 (H)" aria-label="전술 노트" ${on('click', () => showPlaybook.update((v) => !v))}>?</button>
+                <button type="button" title="벤치와 교체 (B)" aria-label="벤치와 교체" ${on('click', () => showBench.update((v) => !v))}>⇄</button>
+                <button type="button" title="일시정지 (P)" aria-label="일시정지" ${on('click', () => ctl.togglePause())}>❚❚</button>
+                ${onSettings ? html`<button type="button" title="설정" aria-label="설정" ${on('click', onSettings)}>⚙</button>` : html``}
             </div>
             ${$if(showMusic).$then(MatchRadioControls)}
             ${focusChip}
@@ -1430,25 +1480,25 @@ export const MatchView = (ctl: MatchController, { onExit, onSettings, finishOdds
 
         ${$if(showPlaybook).$then(() =>
             Dialog({
-                label: 'Playbook',
+                label: '전술 노트',
                 dismiss: () => showPlaybook.set(false),
                 children: html`
-            <div class="modal-body"><header><h2>Playbook</h2><button class="ghost" ${on('click', () => showPlaybook.set(false))}>Close <kbd>Esc</kbd></button></header><div class="modal-scroll">${Playbook(cfg)}</div></div>`,
+            <div class="modal-body"><header><h2>전술 노트</h2><button class="ghost" ${on('click', () => showPlaybook.set(false))}>닫기 <kbd>Esc</kbd></button></header><div class="modal-scroll">${Playbook(cfg)}</div></div>`,
             }),
         )}
         ${$if(ctl.halftime).$then(() => HalftimeReport(ctl, { onContinue: () => ctl.endHalftime(), onBench: () => showBench.set(true) }))}
-        ${$if(showBench).$then(() => Dialog({ label: 'Bench & substitutions', dismiss: () => showBench.set(false), children: BenchPanel() }))}
+        ${$if(showBench).$then(() => Dialog({ label: '벤치와 교체', dismiss: () => showBench.set(false), children: BenchPanel() }))}
         ${$render(tipPanel)}
         ${$if(ctl.intro).$then(introOverlay)}
         ${$render(lessonPanel)}
-        ${$if(derived(combined([ctl.paused, benchPause]), ([paused, bench]) => paused && !bench)).$then(() => html`<div class="pause-veil"><div class="banner"><div class="banner-text">Paused</div><div class="banner-sub">Read the commentary, plan your move. P to resume.</div><button class="primary" ${on('click', () => ctl.togglePause())}>Resume</button></div></div>`)}
+        ${$if(derived(combined([ctl.paused, benchPause]), ([paused, bench]) => paused && !bench)).$then(() => html`<div class="pause-veil"><div class="banner"><div class="banner-text">일시정지</div><div class="banner-sub">해설을 읽고 다음 수를 계획하세요. P 키로 재개합니다.</div><button class="primary" ${on('click', () => ctl.togglePause())}>재개</button></div></div>`)}
         ${$render(toast)}
         ${$render(banner)}
         ${$if(derived(ctl.report, Boolean)).$then(() => {
             const [home, away] = m.state.score;
             const cupDraw = knockout && home === away;
-            const label = cupDraw ? 'Resolve penalties' : finishOdds ? 'Back to the club' : 'Back to menu';
-            return MatchReport(ctl, onExit, label, cupDraw ? 'The cup tie goes to penalties.' : undefined);
+            const label = cupDraw ? '승부차기 진행' : finishOdds ? '클럽으로 돌아가기' : '메뉴로 돌아가기';
+            return MatchReport(ctl, onExit, label, cupDraw ? '컵 대결이 승부차기로 이어집니다.' : undefined);
         })}
     </div>`;
     return html`<div class="match" ${lifecycle}>${matchContent}${$if(derived(exitPrompt, Boolean)).$then(ExitDialog)}</div>`;

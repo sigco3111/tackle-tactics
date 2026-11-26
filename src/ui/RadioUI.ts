@@ -91,7 +91,7 @@ const active = derived(combined([radioOn, radioPlaying]), ([enabled, playing]) =
 const trackInfo = combined([nowPlaying, radioOn]);
 
 const Transport = () => {
-    const label = derived(active, (playing) => (playing ? 'Pause music' : 'Play music'));
+    const label = derived(active, (playing) => (playing ? '음악 일시정지' : '음악 재생'));
     const toggle = () => {
         const enabled = radioOn();
         const playing = radioPlaying();
@@ -99,14 +99,14 @@ const Transport = () => {
         if (enabled || !playing) radio.toggle();
     };
     return html`
-        <button type="button" class="ghost rc-btn" aria-label="Previous song" title="Previous song" ${on('click', () => radio.prev())}>⏮</button>
+        <button type="button" class="ghost rc-btn" aria-label="이전 곡" title="이전 곡" ${on('click', () => radio.prev())}>⏮</button>
         <button type="button" class="ghost rc-btn" ${attr({ 'aria-label': label, title: label })} ${on('click', toggle)}>${derived(active, (playing) => (playing ? '❚❚' : '▶'))}</button>
-        <button type="button" class="ghost rc-btn" aria-label="Next song" title="Next song (N)" ${on('click', () => radio.next())}>⏭</button>`;
+        <button type="button" class="ghost rc-btn" aria-label="다음 곡" title="다음 곡 (N)" ${on('click', () => radio.next())}>⏭</button>`;
 };
 
 export const MatchRadioControls = () => {
-    const title = derived(trackInfo, ([track, enabled]) => (enabled ? (track?.title ?? 'Music') : 'Radio off'));
-    return html`<div class="radio-controls match-radio" id="match-radio-controls" role="group" aria-label="Music playback">
+    const title = derived(trackInfo, ([track, enabled]) => (enabled ? (track?.title ?? '음악') : '라디오 꺼짐'));
+    return html`<div class="radio-controls match-radio" id="match-radio-controls" role="group" aria-label="음악 재생">
         <span class="radio-track" ${attr({ title })}><span aria-hidden="true">♫</span> ${title}</span>
         ${Transport()}
     </div>`;
@@ -114,7 +114,7 @@ export const MatchRadioControls = () => {
 
 export const MatchRadioButton = (open: WritableGrain<boolean>) => {
     if (!radio.hasTracks()) return html``;
-    return html`<button type="button" class="match-radio" title="Music" aria-label="Music" ${attr({
+    return html`<button type="button" class="match-radio" title="음악" aria-label="음악" ${attr({
         'aria-expanded': derived(open, String),
         'aria-controls': derived(open, (visible) => (visible ? 'match-radio-controls' : undefined)),
     })} ${on('click', () => open.update((v) => !v))}>♫</button>`;
@@ -123,27 +123,27 @@ export const MatchRadioButton = (open: WritableGrain<boolean>) => {
 export const RadioPlayer = ({ floating = false } = {}) => {
     if (!radio.hasTracks()) return html``;
     const grip = floating ? 'radio-grip' : '';
-    const title = derived(trackInfo, ([track, enabled]) => (enabled ? (track?.title ?? STATION) : 'Radio off'));
+    const title = derived(trackInfo, ([track, enabled]) => (enabled ? (track?.title ?? STATION) : '라디오 꺼짐'));
     const artist = derived(trackInfo, ([track, enabled]) =>
-        !enabled ? 'R turns it back on' : track ? (track.artist ?? STATION) : 'Click anywhere to tune in',
+        !enabled ? 'R 키로 다시 켭니다' : track ? (track.artist ?? STATION) : '아무 곳이나 클릭하면 재생됩니다',
     );
     const fresh = derived(combined([announce, radioOn]), ([track, enabled]) => (enabled ? track : null));
     const collapsed = derived(prefs, (p) => p.radioCollapsed);
     const Collapsed = () => html`<div ${attr({ class: derived(radioOff, (off) => `radio-dock collapsed ${off ? 'off' : ''}`) })}>
-        ${$if(derived(fresh, Boolean)).$then(() => html`<div class="radio-toast"><small>Now playing</small><b>${derived(fresh, (track) => track?.title ?? '')}</b><span>${derived(fresh, (track) => track?.artist ?? STATION)}</span></div>`)}
-        <button ${attr({ class: derived(active, (playing) => `radio-fab radio-grip ${playing ? 'live' : ''}`), title: derived(title, (name) => `Radio: ${name} · click to open or drag to move`) })} ${on('click', () => setPref('radioCollapsed', false))}>♫</button>
+        ${$if(derived(fresh, Boolean)).$then(() => html`<div class="radio-toast"><small>재생 중</small><b>${derived(fresh, (track) => track?.title ?? '')}</b><span>${derived(fresh, (track) => track?.artist ?? STATION)}</span></div>`)}
+        <button ${attr({ class: derived(active, (playing) => `radio-fab radio-grip ${playing ? 'live' : ''}`), title: derived(title, (name) => `라디오: ${name} · 클릭해서 열기, 드래그해서 이동`) })} ${on('click', () => setPref('radioCollapsed', false))}>♫</button>
     </div>`;
     const Expanded = () => {
         const cls = derived(combined([radioOff, fresh]), ([off, track]) => `radio-dock ${off ? 'off' : ''} ${track ? 'fresh' : ''}`);
-        const toggleLabel = derived(radioOff, (off) => (off ? 'Turn radio on' : 'Turn radio off'));
+        const toggleLabel = derived(radioOff, (off) => (off ? '라디오 켜기' : '라디오 끄기'));
         const speaker = derived(radioOff, (off) =>
             off
                 ? 'M11 6h2v2h2V6h2v2h-2v2h2v2h-2v-2h-2v2h-2v-2h2V8h-2z'
                 : 'M11 6h2v2h1v2h-1v2h-2v-2h1V8h-1z M14 3h2v2h1v8h-1v2h-2v-2h1V5h-1z',
         );
-        return html`<div ${attr({ class: cls })} role="group" aria-label="Music playback">
-            <i class="np-icon ${grip}" aria-hidden="true" ${attr({ title: floating ? 'Drag to move the radio' : undefined })}>♫</i>
-            <div class="rc-text ${grip}"><small>${derived(fresh, (track) => (track ? 'Now playing' : 'Radio'))}</small><b ${attr({ title })}>${title}</b><span ${attr({ title: artist })}>${artist}</span></div>
+        return html`<div ${attr({ class: cls })} role="group" aria-label="음악 재생">
+            <i class="np-icon ${grip}" aria-hidden="true" ${attr({ title: floating ? '드래그해서 라디오 이동' : undefined })}>♫</i>
+            <div class="rc-text ${grip}"><small>${derived(fresh, (track) => (track ? '재생 중' : '라디오'))}</small><b ${attr({ title })}>${title}</b><span ${attr({ title: artist })}>${artist}</span></div>
             ${Transport()}
             <button type="button" class="ghost rc-btn radio-mute" ${attr({ 'aria-label': toggleLabel, title: derived(toggleLabel, (label) => `${label} (R)`) })} ${on('click', () => radio.setOn(!radioOn()))}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">
@@ -151,7 +151,7 @@ export const RadioPlayer = ({ floating = false } = {}) => {
                     <path ${attr({ d: speaker })} />
                 </svg>
             </button>
-            ${floating ? html`<button type="button" class="ghost rc-btn" aria-label="Hide the player" title="Hide the player" ${on('click', () => setPref('radioCollapsed', true))}>⌄</button>` : html``}
+            ${floating ? html`<button type="button" class="ghost rc-btn" aria-label="플레이어 숨기기" title="플레이어 숨기기" ${on('click', () => setPref('radioCollapsed', true))}>⌄</button>` : html``}
         </div>`;
     };
     return floating ? html`<div class="radio-window" ${moveRadio}>${$if(collapsed).$then(Collapsed).$else(Expanded)}</div>` : Expanded();

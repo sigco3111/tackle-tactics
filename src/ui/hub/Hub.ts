@@ -76,28 +76,28 @@ import { Dialog } from '../Dialog';
 
 type Tab = 'overview' | 'season' | 'squad' | 'tactics' | 'training' | 'league' | 'cup' | 'market' | 'finances' | 'playbook';
 const TABS: Array<[Tab, string, string]> = [
-    ['overview', 'Overview', '◈'],
-    ['season', 'Season Plan', '▤'],
-    ['squad', 'Squad', '☰'],
-    ['tactics', 'Tactics', '▦'],
-    ['training', 'Training', '⚒'],
-    ['league', 'League', '♜'],
-    ['cup', 'Cups', '♛'],
-    ['market', 'Market', '⇄'],
-    ['finances', 'Finances', '¤'],
-    ['playbook', 'Playbook', '✦'],
+    ['overview', '개요', '◈'],
+    ['season', '시즌 일정', '▤'],
+    ['squad', '스쿼드', '☰'],
+    ['tactics', '전술', '▦'],
+    ['training', '훈련', '⚒'],
+    ['league', '리그', '♜'],
+    ['cup', '컵 대회', '♛'],
+    ['market', '이적 시장', '⇄'],
+    ['finances', '재정', '¤'],
+    ['playbook', '플레이북', '✦'],
 ];
 const CLASSES: ClassId[] = ['keeper', 'defender', 'midfielder', 'winger', 'striker'];
 
 export type HubNotice = { title: string; lines: string[] };
 
 const PLAYER_DEVELOPMENT: HubNotice = {
-    title: 'Player development',
+    title: '선수 성장',
     lines: [
-        'Overall (OVR) measures current ability. It combines class levels with the stats that matter most to each class. Reflexes count more for a keeper, while shooting counts more for a striker. Class levels also unlock abilities.',
-        'Potential stars show growth per level-up. Higher potential usually means more stat points, and the class that levels up influences which stats improve.',
-        'Age affects stats at the end of each season. Players tend to improve before their personal peak age, hold steady around it, and decline after it. Veterans can still improve through level-ups during the season.',
-        'Transfer value factors in current OVR, potential, and age relative to peak. A young prospect can cost more than a veteran with the same OVR. Higher value generally means higher wages.',
+        '종합 능력치(OVR)는 현재 실력을 나타냅니다. 포지션 레벨과 각 포지션에 중요한 능력치를 합산한 값입니다. 골키퍼는 반사신경, 스트라이커는 슈팅이 더 크게 반영됩니다. 포지션 레벨은 능력도 해금합니다.',
+        '잠재력 별은 레벨업당 성장폭을 보여 줍니다. 잠재력이 높을수록 보통 능력치가 더 많이 오르며, 어떤 포지션이 레벨업하느냐에 따라 오르는 능력치가 달라집니다.',
+        '나이는 매 시즌 종료 시 능력치에 영향을 줍니다. 선수는 개인 전성기 나이 전에는 성장하고, 전후로는 유지되며, 이후에는 하락합니다. 베테랑도 시즌 중 레벨업으로 성장할 수 있습니다.',
+        '이적 가치는 현재 OVR, 잠재력, 전성기 대비 나이를 반영합니다. 어린 유망주는 같은 OVR의 베테랑보다 비쌀 수 있습니다. 가치가 높을수록 보통 주급도 높습니다.',
     ],
 };
 
@@ -114,7 +114,7 @@ export type HubActions = {
 
 export const spriteFor = (club: CareerClub, p: Player) => (p.cls === 'keeper' ? club.keeperKit : `${club.kit}_player_${p.look ?? 1}`);
 
-const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`;
+const ordinal = (n: number) => `${n}위`;
 
 const crest = (cl: CareerClub) => html`<span class="crest" style="--kit:${kitColor(cl.kit)}">${cl.short}</span>`;
 
@@ -193,23 +193,23 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
     };
     const stars = (p: Player) => {
         const rating = potentialStars(cfg, p);
-        const label = `Potential ${rating} out of 5 · growth per level-up`;
+        const label = `잠재력 5점 만점에 ${rating}점 · 레벨업당 성장폭`;
         return html`<span class="stars" role="img" aria-label="${label}" title="${label}">${'★'.repeat(rating)}<i>${'★'.repeat(5 - rating)}</i></span>`;
     };
 
     // ------------------------------------------------------------ top bar
     const todayInfo = () => {
-        if (story(c).inbox) return { label: 'A letter arrives', sub: 'Read it before moving on', kind: 'letter' as const };
+        if (story(c).inbox) return { label: '편지가 도착했습니다', sub: '진행하기 전에 읽어 보세요', kind: 'letter' as const };
         const t = today(cfg, c);
-        if (t.kind === 'seasonEnd') return { label: 'End season', sub: 'Promotion, relegation and awards', kind: t.kind };
+        if (t.kind === 'seasonEnd') return { label: '시즌 종료', sub: '승격, 강등, 시상', kind: t.kind };
         if (t.kind === 'match') {
             const f = t.fixture;
             const opp = club(f.home === u().id ? f.away : f.home);
-            const label = t.cup ? `${cupOf(c, t.cup).name} · ${t.cup.label}` : `Matchday ${t.round + 1}`;
-            return { label, sub: `${f.home === u().id ? 'vs' : 'at'} ${opp.name}`, kind: t.kind };
+            const label = t.cup ? `${cupOf(c, t.cup).name} · ${t.cup.label}` : `${t.round + 1}라운드`;
+            return { label, sub: `${f.home === u().id ? 'vs' : '@'} ${opp.name}`, kind: t.kind };
         }
         return {
-            label: t.cup ? `${cupOf(c, t.cup).name} day · Training` : 'Training day',
+            label: t.cup ? `${cupOf(c, t.cup).name} 당일 · 훈련` : '훈련일',
             sub: drillsLabel(c.drills),
             kind: t.kind,
         };
@@ -243,9 +243,9 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
 
     const todayAction = read(todayInfo);
     const topbar = html`<header class="hub-top">
-        <div class="when"><b>Season ${read(() => String(c.season))}</b><span>${read(() => {
+        <div class="when"><b>${read(() => String(c.season))}시즌</b><span>${read(() => {
             const days = seasonDays(cfg, c);
-            return c.day > days ? 'Season review' : `Day ${c.day} of ${days}`;
+            return c.day > days ? '시즌 리뷰' : `${days}일 중 ${c.day}일차`;
         })}</span></div>
         ${RadioPlayer()}
         <button class="primary go" ${on('click', continueDay)}><span><b>${derived(todayAction, (t) => t.label)}</b><small>${derived(todayAction, (t) => t.sub)}</small></span><i>→</i></button>
@@ -258,23 +258,23 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             const f = t.fixture;
             const h = club(f.home);
             const a = club(f.away);
-            const label = t.cup ? `${cupOf(c, t.cup).name} · ${t.cup.label}` : `Matchday ${t.round + 1} of ${roundsPerSeason(c)}`;
+            const label = t.cup ? `${cupOf(c, t.cup).name} · ${t.cup.label}` : `${roundsPerSeason(c)}라운드 중 ${t.round + 1}라운드`;
             return html`<div class="card next">
-                <h3>Next up · ${label}</h3>
+                <h3>다음 경기 · ${label}</h3>
                 <div class="vs">${crest(h)}<b>${h.name}</b><span>vs</span><b>${a.name}</b>${crest(a)}</div>
-                <p class="muted">Team strength ${squadOvr(cfg, h).toFixed(0)} vs ${squadOvr(cfg, a).toFixed(0)}</p>
+                <p class="muted">팀 전력 ${squadOvr(cfg, h).toFixed(0)} vs ${squadOvr(cfg, a).toFixed(0)}</p>
             </div>`;
         }
         if (t.kind === 'training') {
             const next = seasonSchedule(cfg, c).find((date) => date.day > c.day && scheduledFixture(c, date));
-            const note = t.cup ? `${cupOf(c, t.cup).name} ${t.cup.label.toLowerCase()} today. Your squad trains.` : '';
-            return html`<div class="card next"><h3>Training day · ${drillsLabel(c.drills)}</h3>
+            const note = t.cup ? `오늘은 ${cupOf(c, t.cup).name} ${t.cup.label}입니다. 선수단은 훈련합니다.` : '';
+            return html`<div class="card next"><h3>훈련일 · ${drillsLabel(c.drills)}</h3>
                 ${note ? html`<p>${note}</p>` : html``}
-                <p>${next ? `Next match on Day ${next.day}.` : 'Season review follows the last training day.'}</p>
-                <button class="ghost" ${on('click', () => tab.set('training'))}>View training</button>
+                <p>${next ? `다음 경기는 ${next.day}일차입니다.` : '마지막 훈련일 뒤에 시즌 리뷰가 이어집니다.'}</p>
+                <button class="ghost" ${on('click', () => tab.set('training'))}>훈련 보기</button>
             </div>`;
         }
-        return html`<div class="card next"><h3>Season over</h3><p>Continue to settle promotion, relegation and season bonuses.</p></div>`;
+        return html`<div class="card next"><h3>시즌 종료</h3><p>계속해서 승격, 강등, 시즌 보너스를 정산하세요.</p></div>`;
     };
 
     const miniTable = () => {
@@ -289,17 +289,17 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const items: Fragment[] = [];
         if (injured.length)
             items.push(
-                html`<li class="bad">${String(injured.length)} injured: ${injured.map((p) => `${p.name} (${p.injury}d)`).join(', ')}</li>`,
+                html`<li class="bad">부상 ${String(injured.length)}명: ${injured.map((p) => `${p.name} (${p.injury}일)`).join(', ')}</li>`,
             );
         const ready = cl.squad.filter(isReady);
         if (ready.length)
             items.push(
-                html`<li class="good lvl-alert">▲ ${String(ready.length)} ready to level up: ${ready.map((p) => p.name).join(', ')} <button class="ghost" ${on('click', () => levelUp.set({ id: null }))}>Choose</button></li>`,
+                html`<li class="good lvl-alert">▲ 레벨업 가능 ${String(ready.length)}명: ${ready.map((p) => p.name).join(', ')} <button class="ghost" ${on('click', () => levelUp.set({ id: null }))}>선택</button></li>`,
             );
-        if (cl.budget < 0) items.push(html`<li class="bad">You're in debt. Sell a player or win some matches.</li>`);
+        if (cl.budget < 0) items.push(html`<li class="bad">적자 상태입니다. 선수를 팔거나 경기에서 이겨 보세요.</li>`);
         if (cl.squad.length < cfg.career.squadMin + 1)
-            items.push(html`<li class="bad">Thin squad (${String(cl.squad.length)}). Check the market.</li>`);
-        if (!items.length) items.push(html`<li class="good">All good. The squad is fit.</li>`);
+            items.push(html`<li class="bad">선수층이 얇습니다(${String(cl.squad.length)}명). 이적 시장을 확인하세요.</li>`);
+        if (!items.length) items.push(html`<li class="good">이상 없음. 선수단 컨디션이 좋습니다.</li>`);
         return items;
     };
 
@@ -325,37 +325,37 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             });
         const run =
             s.streak >= 2
-                ? `${String(s.streak)} wins in a row`
+                ? `${String(s.streak)}연승`
                 : (s.lossRun ?? 0) >= 2
-                  ? `${String(s.lossRun)} defeats in a row`
+                  ? `${String(s.lossRun)}연패`
                   : s.streak <= -2
-                    ? `${String(-s.streak)} without a win`
+                    ? `${String(-s.streak)}경기 무승`
                     : '';
-        const drift = m > 62 ? 'Cools off on training days.' : m < 58 ? 'Recovers a little on training days.' : 'Steady.';
+        const drift = m > 62 ? '훈련일마다 가라앉습니다.' : m < 58 ? '훈련일마다 조금씩 회복됩니다.' : '안정적입니다.';
         const edgeText = `${edge > 0 ? '+' : ''}${String(edge)}%`;
         return html`<div class="card squad-status m-${tone}">
-            <h3>Squad status</h3>
+            <h3>선수단 상태</h3>
             <dl class="ss-rows">
-                <dt>Morale</dt>
-                <dd><span class="morale-meter" title="Morale ${String(m)}/100">${cells}<span class="mid"></span></span><span class="ss-mood">${moraleLabel(m)} · ${String(m)}</span></dd>
-                <dt>Match edge</dt>
-                <dd title="Morale shifts shot accuracy, tackles and interceptions in every match">${edgeText} <span class="muted">on shots, tackles, interceptions</span></dd>
-                <dt>Form</dt>
-                <dd><span class="form">${form.length ? form.map((r) => html`<i class="r${r}">${r}</i>`) : '–'}</span> <span class="muted">${run || drift}</span></dd>
+                <dt>사기</dt>
+                <dd><span class="morale-meter" title="사기 ${String(m)}/100">${cells}<span class="mid"></span></span><span class="ss-mood">${moraleLabel(m)} · ${String(m)}</span></dd>
+                <dt>경기 보정</dt>
+                <dd title="사기는 모든 경기에서 슛 정확도, 태클, 인터셉트에 영향을 줍니다">${edgeText} <span class="muted">슛·태클·인터셉트</span></dd>
+                <dt>최근 폼</dt>
+                <dd><span class="form">${form.length ? form.map((r) => html`<i class="r${r}">${r === 'W' ? '승' : r === 'D' ? '무' : '패'}</i>`) : '–'}</span> <span class="muted">${run || drift}</span></dd>
             </dl>
             <ul class="ss-alerts">${alerts()}</ul>
         </div>`;
     };
 
-    const NewsFeed = () => html`<div class="card news fill"><h3>News</h3><ul class="scroll">
-        ${$each(read(() => c.news.slice(0, 14))).$as((n) => html`<li class="${n.tone}"><b>S${String(n.season)} D${String(n.day)}</b> ${n.text}</li>`)}
+    const NewsFeed = () => html`<div class="card news fill"><h3>뉴스</h3><ul class="scroll">
+        ${$each(read(() => c.news.slice(0, 14))).$as((n) => html`<li class="${n.tone}"><b>${String(n.season)}시즌 ${String(n.day)}일</b> ${n.text}</li>`)}
     </ul></div>`;
 
     const questsCard = () => {
         const qs = story(c).quests;
         if (!qs.length) return html``;
         const fee = cfg.career.matchFee[u().tier]!;
-        return html`<div class="card quests"><h3>Season quests <small>bonus money & morale</small></h3>
+        return html`<div class="card quests"><h3>시즌 퀘스트 <small>보너스 자금과 사기</small></h3>
             <ul>${qs.map(
                 (q) => html`<li class="${q.done ? 'done' : ''}">
                 <div><b>${q.done ? '✓ ' : ''}${q.title}</b><span>${q.desc}</span></div>
@@ -374,18 +374,18 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const cl = u();
         validLineup(cfg, cl);
         const players = cl.lineup.map((id) => cl.squad.find((p) => p.id === id)!).filter(Boolean);
-        return html`<div class="card fill"><h3>Your XI <small>${cl.formationId} · strength ${squadOvr(cfg, cl).toFixed(0)}</small></h3>
+        return html`<div class="card fill"><h3>선발 11명 <small>${cl.formationId} · 전력 ${squadOvr(cfg, cl).toFixed(0)}</small></h3>
             <ul class="xi scroll">${players.map((p) => html`<li ${on('click', () => selected.set({ id: p.id, from: 'squad' }))}>${portrait(cl, p, 26)}<span>${p.name}</span>${p.injury ? html`<em class="inj">✚ ${String(p.injury)}d</em>` : html``}<em>${classLabel(cfg, p)} · ${String(ovr(cfg, p))}</em></li>`)}</ul></div>`;
     };
 
     const historyCard = () =>
-        html`<div class="card"><h3>Club history</h3>${
+        html`<div class="card"><h3>클럽 역사</h3>${
             c.history.length
-                ? html`<ul class="hist">${c.history.map((h) => html`<li>Season ${String(h.season)}: ${ordinal(h.position)} in the ${leagueName(c.nation, h.tier)}</li>`)}
+                ? html`<ul class="hist">${c.history.map((h) => html`<li>${String(h.season)}시즌: ${leagueName(c.nation, h.tier)} ${ordinal(h.position)}</li>`)}
             ${story(c)
                 .awards.slice(-4)
-                .map((a) => html`<li class="award">★ S${String(a.season)} ${a.title}: ${a.who}</li>`)}</ul>`
-                : html`<p class="muted">Your first season. Top ${String(cfg.career.promote)} go up, bottom ${String(cfg.career.relegate)} go down.</p>`
+                .map((a) => html`<li class="award">★ ${String(a.season)}시즌 ${a.title}: ${a.who}</li>`)}</ul>`
+                : html`<p class="muted">첫 시즌입니다. 상위 ${String(cfg.career.promote)}팀은 승격, 하위 ${String(cfg.career.relegate)}팀은 강등됩니다.</p>`
         }</div>`;
 
     // ------------------------------------------------------------ season plan
@@ -411,18 +411,18 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                 title: cup
                     ? `${cupOf(c, cup).name} · ${cup.label}`
                     : fixture
-                      ? `Matchday ${fixture.round + 1}`
+                      ? `${fixture.round + 1}라운드`
                       : kind === 'review'
-                        ? 'Season review'
-                        : 'Training',
-                match: opponent ? `${home ? 'vs' : 'at'} ${opponent.name}` : '',
+                        ? '시즌 리뷰'
+                        : '훈련',
+                match: opponent ? `${home ? 'vs' : '@'} ${opponent.name}` : '',
                 cupNote:
                     cup && !fixture
                         ? !cup.fixtures.length
-                            ? 'Draw pending'
+                            ? '추첨 대기'
                             : cup.byes.includes(u().id)
-                              ? 'Bye · squad training'
-                              : 'Squad training'
+                              ? '부전승 · 선수단 훈련'
+                              : '선수단 훈련'
                         : '',
                 derby: !!opponent && opponent.id === rival?.id,
                 score: result ? `${result.gf}–${result.ga} ${result.outcome}${result.pens ? ` (${result.pens})` : ''}` : '',
@@ -445,20 +445,20 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             const item = cal.days[day - 1]!;
             const { title, match, score, tone, letter } = item;
             return html`<section class="season-day-details" aria-live="polite">
-                <h4>Day ${String(day)} · ${title}${item.derby ? ' · Derby' : ''}</h4>
+                <h4>${String(day)}일차 · ${title}${item.derby ? ' · 더비' : ''}</h4>
                 ${match ? html`<p>${match}${score ? html` <strong class="${tone}">${score}</strong>` : html``}</p>` : html``}
                 ${item.cupNote ? html`<p>${item.cupNote}</p>` : html``}
-                ${item.kind === 'cup' ? html`<p><button class="ghost" ${on('click', () => tab.set('cup'))}>View cups</button></p>` : html``}
-                ${item.kind === 'review' ? html`<p>Promotion, relegation and awards</p>` : html``}
-                ${item.trains && day === cal.today ? html`<p>Drills · ${drillsLabel(c.drills)}</p>` : html``}
-                ${item.trains && day < cal.today && !item.news.length ? html`<p class="muted">Training completed</p>` : html``}
-                ${letter ? html`<p><button class="ghost" ${on('click', () => letterOpen.set(true))}>Read letter</button> ${letter.title} · ${letter.from}</p>` : html``}
+                ${item.kind === 'cup' ? html`<p><button class="ghost" ${on('click', () => tab.set('cup'))}>컵 대회 보기</button></p>` : html``}
+                ${item.kind === 'review' ? html`<p>승격, 강등, 시상</p>` : html``}
+                ${item.trains && day === cal.today ? html`<p>드릴 · ${drillsLabel(c.drills)}</p>` : html``}
+                ${item.trains && day < cal.today && !item.news.length ? html`<p class="muted">훈련 완료</p>` : html``}
+                ${letter ? html`<p><button class="ghost" ${on('click', () => letterOpen.set(true))}>편지 읽기</button> ${letter.title} · ${letter.from}</p>` : html``}
                 ${item.news.length ? html`<ul class="alerts">${item.news.map((event) => html`<li class="${event.tone}">${event.text}</li>`)}</ul>` : html``}
             </section>`;
         });
         return html`<div class="card fill season-calendar">
-            <h3>Season ${derived(calendar, (info) => String(info.season))} calendar <small ${attr({ hidden: derived(calendar, (info) => !info.rival) })}>${derived(calendar, (info) => (info.rival ? `Rival · ${info.rival.name}` : ''))}</small></h3>
-            <div class="seg" role="group" aria-label="Calendar dates">
+            <h3>${derived(calendar, (info) => String(info.season))}시즌 일정 <small ${attr({ hidden: derived(calendar, (info) => !info.rival) })}>${derived(calendar, (info) => (info.rival ? `라이벌 · ${info.rival.name}` : ''))}</small></h3>
+            <div class="seg" role="group" aria-label="일정 날짜">
                 ${$each(pages)
                     .$withKey((index) => index)
                     .$as((index) => {
@@ -466,12 +466,12 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                         const first = index * pageSize + 1;
                         const last = derived(calendar, (cal) => Math.min(first + pageSize - 1, cal.days.length));
                         return html`<button ${attr({ class: derived(active, (value) => (value ? 'on' : '')), 'aria-pressed': derived(active, String) })}
-                        ${on('click', () => planDay.set(c.day >= first && c.day <= last() ? null : first))}>Days ${String(first)}–${derived(last, String)}</button>`;
+                        ${on('click', () => planDay.set(c.day >= first && c.day <= last() ? null : first))}>${String(first)}–${derived(last, String)}일</button>`;
                     })}
-                <button ${on('click', () => planDay.set(null))}>Today</button>
+                <button ${on('click', () => planDay.set(null))}>오늘</button>
             </div>
             <div class="calendar-layout">
-                <div class="scroll"><div class="season-calendar-grid" aria-label="Season days">
+                <div class="scroll"><div class="season-calendar-grid" aria-label="시즌 일정">
                     ${$each(visibleDays)
                         .$withKey((day) => day)
                         .$as((day) => {
@@ -480,7 +480,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                             const content = derived(
                                 entry,
                                 ({ title, match, cupNote, score, tone, derby, letter, news }) => html`
-                            <b>${title}${derby ? ' · Derby' : ''}</b>
+                            <b>${title}${derby ? ' · 더비' : ''}</b>
                             ${match || cupNote ? html`<span class="season-opponent">${match || cupNote}</span>` : html``}
                             ${score ? html`<strong class="${tone}">${score}</strong>` : html``}
                             ${letter ? html`<small class="season-event">✉ ${letter.title}</small>` : html``}
@@ -493,7 +493,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                                 'aria-pressed': derived(selectedDay, (date) => String(date === day)),
                                 'aria-current': derived(current, (isToday) => (isToday ? 'date' : undefined)),
                             })} ${on('click', () => planDay.set(day))}>
-                            <span class="season-day-heading">Day ${String(day)}${$if(current).$then(() => html`<small>Today</small>`)}</span>
+                            <span class="season-day-heading">${String(day)}일${$if(current).$then(() => html`<small>오늘</small>`)}</span>
                             ${$render(content)}
                         </button>`;
                         })}
@@ -509,7 +509,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         tier: number,
         compact = false,
     ) => html`<table class="tbl league ${tier === 0 ? 'top-flight' : ''}">
-        <thead><tr><th>#</th><th>Club</th><th>P</th>${compact ? html`` : html`<th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th>`}<th>GD</th><th>Pts</th></tr></thead>
+        <thead><tr><th>#</th><th>클럽</th><th>경기</th>${compact ? html`` : html`<th>승</th><th>무</th><th>패</th><th>득점</th><th>실점</th>`}<th>득실</th><th>승점</th></tr></thead>
         <tbody>${rows.map((r, i) => {
             const cl = club(r.club);
             const zone =
@@ -534,10 +534,10 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             .filter((x) => x.l && x.l.goals > 0)
             .sort((a, b) => b.l!.goals - a.l!.goals || b.l!.assists - a.l!.assists)
             .slice(0, 8);
-        return html`<div class="card fill boot"><h3>Golden Boot <small>top scorers</small></h3>${
+        return html`<div class="card fill boot"><h3>득점왕 <small>득점 순위</small></h3>${
             rows.length
-                ? html`<ol class="scroll">${rows.map((x, i) => html`<li class="${x.cl.id === u().id ? 'me' : ''}"><span class="pos">${String(i + 1)}</span>${portrait(x.cl, x.p, 24)}<b>${x.p.name}</b>${crest(x.cl)}<em>${String(x.l!.goals)} G · ${String(x.l!.assists)} A</em></li>`)}</ol>`
-                : html`<p class="muted">No goals yet this season.</p>`
+                ? html`<ol class="scroll">${rows.map((x, i) => html`<li class="${x.cl.id === u().id ? 'me' : ''}"><span class="pos">${String(i + 1)}</span>${portrait(x.cl, x.p, 24)}<b>${x.p.name}</b>${crest(x.cl)}<em>${String(x.l!.goals)}골 · ${String(x.l!.assists)}도움</em></li>`)}</ol>`
+                : html`<p class="muted">이번 시즌 아직 득점이 없습니다.</p>`
         }</div>`;
     };
 
@@ -548,10 +548,10 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             const home = n === c.nation;
             const rounds = Array.from({ length: roundsPerSeason(c) }, (_, r) => d.fixtures.filter((f) => f.round === r));
             return html`            <div class="grid-2 wide-left">
-                <div class="col"><div class="card"><h3>${flag(n)} ${NATIONS[n].name} · ${leagueName(n, d.tier)}</h3>${leagueTable(table(d), d.tier)}<p class="muted legend-line">${d.tier === 0 ? html`<i class="intl"></i>${INTL_CUP_NAME} ` : html``}<i class="up"></i>Promotion <i class="down"></i>Relegation</p></div>${home ? goldenBoot(d) : html``}</div>
-                <div class="card fixtures fill"><h3>Fixtures</h3><div class="scroll">${rounds.map(
+                <div class="col"><div class="card"><h3>${flag(n)} ${NATIONS[n].name} · ${leagueName(n, d.tier)}</h3>${leagueTable(table(d), d.tier)}<p class="muted legend-line">${d.tier === 0 ? html`<i class="intl"></i>${INTL_CUP_NAME} ` : html``}<i class="up"></i>승격 <i class="down"></i>강등</p></div>${home ? goldenBoot(d) : html``}</div>
+                <div class="card fixtures fill"><h3>경기 일정</h3><div class="scroll">${rounds.map(
                     (fs, r) =>
-                        html`<div class="round"><h4>Matchday ${String(r + 1)}</h4>${fs.map(
+                        html`<div class="round"><h4>${String(r + 1)}라운드</h4>${fs.map(
                             (f) => html`<div class="fx ${f.home === u().id || f.away === u().id ? 'me' : ''}">
                     <span>${club(f.home).name}</span><b>${f.result ? `${f.result[0]} – ${f.result[1]}` : 'v'}</b><span>${club(f.away).name}</span></div>`,
                         )}</div>`,
@@ -584,12 +584,12 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const roundView = derived(combined([activeRound, rounds]), ([index, dates]) => {
             const round = dates[index];
             if (!round)
-                return html`<p class="muted">${which() === 'intl' ? `No ${INTL_CUP_NAME} this season.` : 'The cup begins next season.'}</p>`;
-            return html`<h4>${round.label} · Day ${String(round.day)}</h4>
+                return html`<p class="muted">${which() === 'intl' ? `이번 시즌에는 ${INTL_CUP_NAME}이(가) 없습니다.` : '컵 대회는 다음 시즌에 시작합니다.'}</p>`;
+            return html`<h4>${round.label} · ${String(round.day)}일차</h4>
                 ${
                     round.fixtures.length
                         ? html`<table class="tbl cup-fixtures">
-                    <thead><tr><th>Home</th><th>Result</th><th>Away</th></tr></thead>
+                    <thead><tr><th>홈</th><th>결과</th><th>원정</th></tr></thead>
                     <tbody>${round.fixtures.map((fixture) => {
                         const home = club(fixture.home);
                         const away = club(fixture.away);
@@ -603,9 +603,9 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                         </tr>`;
                     })}</tbody>
                 </table>`
-                        : html`<p class="muted">The draw follows the previous round.</p>`
+                        : html`<p class="muted">추첨은 이전 라운드 뒤에 진행됩니다.</p>`
                 }
-                ${round.byes.length ? html`<h4>Byes to the next round</h4><p>${round.byes.map((id) => club(id).name).join(' · ')}</p>` : html``}`;
+                ${round.byes.length ? html`<h4>다음 라운드 부전승</h4><p>${round.byes.map((id) => club(id).name).join(' · ')}</p>` : html``}`;
         });
         return html`<div class="card fill">
             <div class="seg">${(['cup', 'intl'] as const).map((key) => {
@@ -620,12 +620,12 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             })}</div>
             <h3>${derived(which, (key) => (key === 'intl' ? INTL_CUP_NAME : CUP_NAME))} <small>${derived(info, (cup) =>
                 cup?.champion
-                    ? `${club(cup.champion).name} won the cup`
+                    ? `${club(cup.champion).name} 우승`
                     : cup?.key === 'intl'
-                      ? `Single-match knockout · the top ${cfg.career.intlPerNation} of every top flight${cup.rounds.some((r) => r.fixtures.some((f) => f.home === c.userClubId || f.away === c.userClubId) || r.byes.includes(c.userClubId)) ? ' · you are in it' : ''}`
-                      : 'Single-match knockout · all five divisions',
+                      ? `단판 토너먼트 · 각 1부 리그 상위 ${cfg.career.intlPerNation}팀${cup.rounds.some((r) => r.fixtures.some((f) => f.home === c.userClubId || f.away === c.userClubId) || r.byes.includes(c.userClubId)) ? ' · 내 클럽 참가' : ''}`
+                      : '단판 토너먼트 · 5개 디비전 전체',
             )}</small></h3>
-            <div class="seg" role="group" aria-label="Cup rounds">
+            <div class="seg" role="group" aria-label="컵 라운드">
                 ${$each(derived(rounds, (dates) => dates.map((_, i) => i)))
                     .$withKey((index) => index)
                     .$as((index) => {
@@ -644,10 +644,10 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
 
     const playerRow = (p: Player, extra: Fragment, from: 'squad' | 'market') => {
         const injury = read(() => p.injury);
-        const injuryLabel = derived(injury, (days) => (days ? `✚ ${days}d` : ''));
+        const injuryLabel = derived(injury, (days) => (days ? `✚ ${days}일` : ''));
         return html`<tr ${attr({ class: derived(injury, (days) => (days ? 'injured' : '')) })} ${on('click', () => selected.set({ id: p.id, from }))}>
             <td>${portrait(u(), p, 32)}</td>
-            <td class="name">${flag(p.nation)}<b>${p.name}</b>${$if(read(() => from === 'squad' && isReady(p))).$then(() => html`<em class="lvl-badge" title="Ready to level up">▲</em>`)}${$if(derived(injury, Boolean)).$then(() => html`<em class="inj">${injuryLabel}</em>`)}</td>
+            <td class="name">${flag(p.nation)}<b>${p.name}</b>${$if(read(() => from === 'squad' && isReady(p))).$then(() => html`<em class="lvl-badge" title="레벨업 가능">▲</em>`)}${$if(derived(injury, Boolean)).$then(() => html`<em class="inj">${injuryLabel}</em>`)}</td>
             <td>${modelRegion(() => classChips(p))}</td>
             <td class="num">${read(() => String(p.age))}</td>
             <td class="num"><b>${read(() => String(ovr(cfg, p)))}</b></td>
@@ -668,17 +668,17 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         );
         return html`<div class="card fill">
             <header class="squad-heading">
-                <h3>Squad <small>${read(() => String(u().squad.length))} players · ${String(cfg.career.squadMin)}–${String(cfg.career.squadMax)} allowed · click a player for details</small></h3>
-                <button type="button" class="ghost" ${on('click', () => modal.set(PLAYER_DEVELOPMENT))}>Player development</button>
+                <h3>스쿼드 <small>${read(() => String(u().squad.length))}명 · ${String(cfg.career.squadMin)}–${String(cfg.career.squadMax)}명 허용 · 선수를 누르면 상세 정보</small></h3>
+                <button type="button" class="ghost" ${on('click', () => modal.set(PLAYER_DEVELOPMENT))}>선수 성장</button>
             </header>
-            <div class="scroll"><table class="tbl players"><thead><tr><th></th><th>Name</th><th>Classes</th><th>Age</th><th>OVR</th><th>Potential</th><th>Abilities</th><th>XI</th><th title="Season goals / assists / average rating">G·A·Avg</th><th>Value</th><th>Wage</th></tr></thead>
+            <div class="scroll"><table class="tbl players"><thead><tr><th></th><th>이름</th><th>포지션</th><th>나이</th><th>OVR</th><th>잠재력</th><th>능력</th><th>선발</th><th title="시즌 득점 / 도움 / 평균 평점">득·도·평점</th><th>가치</th><th>주급</th></tr></thead>
             <tbody>${$each(rows)
                 .$withKey((p) => p.id)
                 .$as((p) =>
                     playerRow(
                         p,
                         html`
-                <td>${$if(read(() => u().lineup.includes(p.id))).$then(() => html`<span class="pill">XI</span>`)}</td>
+                <td>${$if(read(() => u().lineup.includes(p.id))).$then(() => html`<span class="pill">선발</span>`)}</td>
                 <td class="num">${read(() => seasonCell(p))}</td><td class="num">${read(() => money(playerValue(cfg, p)))}</td><td class="num">${read(() => money(wage(cfg, p)))}</td>`,
                         'squad',
                     ),
@@ -690,7 +690,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
     const xpBar = (p: Player) => {
         const need = xpToNext(cfg, p);
         const have = Math.round(p.xp);
-        return html`<span class="xpbar ${have >= need ? 'full' : ''}" title="${String(have)} / ${String(need)} XP to the next level"><i style="width:${Math.min(100, (have / need) * 100)}%"></i></span>`;
+        return html`<span class="xpbar ${have >= need ? 'full' : ''}" title="다음 레벨까지 경험치 ${String(have)} / ${String(need)}"><i style="width:${Math.min(100, (have / need) * 100)}%"></i></span>`;
     };
 
     const drawer = derived(selected, (sel) => {
@@ -714,15 +714,15 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                       return;
                   }
                   selected.set(null);
-                  toast(`Signed ${p.name}!`);
+                  toast(`${p.name} 영입 완료!`);
                   changed();
-              })}>Sign for ${money(marketPrice(cfg, entry!))}${entry!.club ? html` <small>from ${entry!.club.name}</small>` : html` <small>free agent</small>`}</button>`
+              })}>${money(marketPrice(cfg, entry!))}에 영입${entry!.club ? html` <small>${entry!.club.name} 소속</small>` : html` <small>자유 계약</small>`}</button>`
             : html`<button class="warn" ${on('click', async () => {
                   if (
                       !(await actions.confirm({
-                          title: `Sell ${p.name}?`,
-                          body: `A club that wants him pays ${money(salePrice(cfg, p))} and he joins them.`,
-                          action: 'Sell player',
+                          title: `${p.name} 선수를 판매할까요?`,
+                          body: `원하는 클럽이 ${money(salePrice(cfg, p))}을(를) 지불하고 선수를 데려갑니다.`,
+                          action: '선수 판매',
                       }))
                   )
                       return;
@@ -732,59 +732,59 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                       return;
                   }
                   selected.set(null);
-                  toast(`Sold ${p.name}.`);
+                  toast(`${p.name} 판매 완료.`);
                   changed();
-              })}>Sell for ${money(salePrice(cfg, p))}</button>`;
+              })}>${money(salePrice(cfg, p))}에 판매</button>`;
         return Dialog({
             label: p.name,
             className: 'drawer-wrap',
             dismiss: () => selected.set(null),
             children: html`<aside class="drawer" style="--kit:${kitColor(cl.kit)}">
-                <header>${portrait(cl, p, 64)}<div><h2>${p.name}</h2><p>${flag(p.nation)} ${nationOf(p.nation).adjective} · ${classLabel(cfg, p)} · age ${String(p.age)} (peaks ~${String(p.peakAge)})</p></div><button class="ghost" ${on('click', () => selected.set(null))}>✕</button></header>
+                <header>${portrait(cl, p, 64)}<div><h2>${p.name}</h2><p>${flag(p.nation)} ${nationOf(p.nation).adjective} · ${classLabel(cfg, p)} · ${String(p.age)}세 (전성기 약 ${String(p.peakAge)}세)</p></div><button class="ghost" ${on('click', () => selected.set(null))}>✕</button></header>
                 <div class="kv">
-                    <div><span>Overall</span><b>${String(ovr(cfg, p))}</b></div>
-                    <div><span>Potential</span><b>${stars(p)}</b></div>
-                    <div><span>Talent</span><b>${p.talent.toFixed(2)}</b></div>
-                    <div><span>Value</span><b>${money(playerValue(cfg, p))}</b></div>
-                    <div><span>Wage</span><b>${money(wage(cfg, p))}</b></div>
-                    <div><span>Status</span><b>${p.injury ? `Injured ${p.injury}d` : 'Fit'}</b></div>
+                    <div><span>종합</span><b>${String(ovr(cfg, p))}</b></div>
+                    <div><span>잠재력</span><b>${stars(p)}</b></div>
+                    <div><span>재능</span><b>${p.talent.toFixed(2)}</b></div>
+                    <div><span>가치</span><b>${money(playerValue(cfg, p))}</b></div>
+                    <div><span>주급</span><b>${money(wage(cfg, p))}</b></div>
+                    <div><span>상태</span><b>${p.injury ? `부상 ${p.injury}일` : '양호'}</b></div>
                     ${(() => {
                         const l = seasonLine(c, p.id);
                         return l && l.apps
-                            ? html`<div class="wide"><span>This season</span><b>${String(l.apps)} apps · ${String(l.goals)} G · ${String(l.assists)} A · avg ${avgRating(l).toFixed(1)}${l.motm ? ` · ${l.motm}× MOTM` : ''}</b></div>`
+                            ? html`<div class="wide"><span>이번 시즌</span><b>${String(l.apps)}경기 · ${String(l.goals)}골 · ${String(l.assists)}도움 · 평점 ${avgRating(l).toFixed(1)}${l.motm ? ` · MOM ${l.motm}회` : ''}</b></div>`
                             : html``;
                     })()}
                 </div>
-                <h4>Class levels <small>level ${String(p.level)} · ${String(Math.round(p.xp))} / ${String(xpToNext(cfg, p))} XP</small></h4>
+                <h4>포지션 레벨 <small>레벨 ${String(p.level)} · 경험치 ${String(Math.round(p.xp))} / ${String(xpToNext(cfg, p))}</small></h4>
                 <div class="levels">${classes.map(([k, l]) => html`<div class="lvl"><span class="cls cls-${k}">${cfg.classes[k].label}</span><b>${String(l)}</b></div>`)}</div>
                 <div class="lvl-xp">${xpBar(p)}${
                     !fromMarket && isReady(p)
                         ? html`<button class="primary" ${on('click', () => {
                               selected.set(null);
                               levelUp.set({ id: p.id });
-                          })}>▲ Level up</button>`
+                          })}>▲ 레벨업</button>`
                         : html``
                 }</div>
-                <h4>Abilities</h4>
+                <h4>능력</h4>
                 <div class="ab-list">${
                     owned.length
                         ? owned.map((id) => {
                               const a = abilityDef(cfg, id);
                               return html`<div class="ab"><span class="ic">${a.icon}</span><div><b>${a.label}</b><p>${a.desc}</p></div></div>`;
                           })
-                        : html`<p class="muted">None yet. At certain class levels you choose an ability or passive.</p>`
+                        : html`<p class="muted">아직 없습니다. 특정 포지션 레벨에서 능력이나 패시브를 고를 수 있습니다.</p>`
                 }
                     ${passivesOf(cfg, p).map((id) => html`<div class="ab passive"><span class="ic">◆</span><div><b>${cfg.passives[id].label}</b><p>${cfg.passives[id].desc}</p></div></div>`)}</div>
                 ${
                     ahead.length
-                        ? html`<h4>Choices ahead</h4><div class="ab-list">${ahead.map(
+                        ? html`<h4>앞으로의 선택</h4><div class="ab-list">${ahead.map(
                               (t) =>
-                                  html`<div class="ab locked"><span class="ic">◇</span><div><b>${cfg.classes[t.cls].short} ${String(t.level)} <em>(now ${String(classLevel(p, t.cls))})</em></b><p>${t.options.map((o) => perkDef(cfg, o).label).join(' or ')}</p></div></div>`,
+                                  html`<div class="ab locked"><span class="ic">◇</span><div><b>${cfg.classes[t.cls].short} ${String(t.level)} <em>(현재 ${String(classLevel(p, t.cls))})</em></b><p>${t.options.map((o) => perkDef(cfg, o).label).join(' 또는 ')}</p></div></div>`,
                           )}</div>`
                         : html``
                 }
-                <h4>Stats</h4>
-                <div class="stats">${stat('speed', 'SPD')}${stat('pace', 'PAC')}${stat('passing', 'PAS')}${stat('shooting', 'SHO')}${stat('dribbling', 'DRI')}${stat('tackling', 'TAC')}${stat('reflexes', 'REF')}${stat('composure', 'COM')}</div>
+                <h4>능력치</h4>
+                <div class="stats">${stat('speed', '속도')}${stat('pace', '주력')}${stat('passing', '패스')}${stat('shooting', '슈팅')}${stat('dribbling', '드리블')}${stat('tackling', '태클')}${stat('reflexes', '반사')}${stat('composure', '침착')}</div>
                 <p class="neg" role="status" ${attr({ hidden: derived(feedback, (message) => !message) })}>${feedback}</p>
                 <footer>${act}</footer>
             </aside>`,
@@ -829,13 +829,13 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             const cl = u();
             const slot = pick === null ? undefined : team.slots[pick]?.slot;
             if (!slot)
-                return html`<h3>Bench</h3><ul class="bench">${cl.squad.filter((p) => !cl.lineup.includes(p.id)).map((p) => html`<li>${portrait(cl, p, 28)}<b>${p.name}</b>${classChips(p)}${p.injury ? html`<em class="inj">✚ ${String(p.injury)}d</em>` : html``}</li>`)}</ul>`;
+                return html`<h3>후보</h3><ul class="bench">${cl.squad.filter((p) => !cl.lineup.includes(p.id)).map((p) => html`<li>${portrait(cl, p, 28)}<b>${p.name}</b>${classChips(p)}${p.injury ? html`<em class="inj">✚ ${String(p.injury)}d</em>` : html``}</li>`)}</ul>`;
             const candidates = [...cl.squad].sort((a, b) => fitFor(cfg, b, slot.cls) - fitFor(cfg, a, slot.cls));
-            return html`<h3>Pick for ${cfg.classes[slot.cls].label}</h3><ul class="bench pickable">${candidates.map((p) => html`<li class="${p.injury ? 'injured' : ''}" ${on('click', () => choose(p.id))}>${portrait(cl, p, 28)}<b>${p.name}</b>${classChips(p)}<span class="num">${String(ovr(cfg, p, slot.cls))}</span>${cl.lineup.includes(p.id) ? html`<span class="pill">XI</span>` : html``}</li>`)}</ul>`;
+            return html`<h3>${cfg.classes[slot.cls].label} 선택</h3><ul class="bench pickable">${candidates.map((p) => html`<li class="${p.injury ? 'injured' : ''}" ${on('click', () => choose(p.id))}>${portrait(cl, p, 28)}<b>${p.name}</b>${classChips(p)}<span class="num">${String(ovr(cfg, p, slot.cls))}</span>${cl.lineup.includes(p.id) ? html`<span class="pill">선발</span>` : html``}</li>`)}</ul>`;
         });
         return html`<div class="grid-2 wide-left">
             <div class="card fill">
-                <h3>Formation <small>click a position, then pick a player · players out of position play with that class's stats but none of its abilities</small></h3>
+                <h3>포메이션 <small>포지션을 누른 뒤 선수를 고르세요 · 자리가 맞지 않는 선수는 해당 포지션 능력치로 뛰지만 능력은 쓰지 못합니다</small></h3>
                 <div class="seg">${cfg.formations.map((f) => {
                     const active = derived(lineup, (team) => team.formation.id === f.id);
                     return html`<button ${attr({ class: derived(active, (isActive) => (isActive ? 'on' : '')), 'aria-pressed': derived(active, String) })} ${on(
@@ -852,8 +852,8 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                         const cl = u();
                         cl.lineup = autoLineup(cfg, cl);
                         changed();
-                        toast('Best XI picked.');
-                    })}>Auto-pick XI</button></div>
+                        toast('최적의 선발 11명을 골랐습니다.');
+                    })}>선발 자동 선택</button></div>
                 <p class="formation-note">${derived(lineup, (team) => team.formation.note)}</p>
                 <div class="board">${slotEls}<div class="half"></div><div class="box"></div></div>
             </div>
@@ -880,18 +880,18 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const fitDots = (fit: number) => [0, 1].map((i) => (fit >= i + 1 ? '●' : fit > i ? '◐' : '○')).join('');
         const row = (p: Player) => {
             const gain = read(() => trainingGain(cfg, p, c.drills));
-            const injury = read(() => (p.injury ? `✚ ${p.injury}d` : ''));
+            const injury = read(() => (p.injury ? `✚ ${p.injury}일` : ''));
             const progress = read(() =>
                 isReady(p)
                     ? html`<button class="lvl-ready" ${on('click', (e) => {
                           e.stopPropagation(); // the level-up prompt, not the player panel
                           levelUp.set({ id: p.id });
-                      })}>▲ Level up</button>`
-                    : html`<span class="prog">Lv ${String(p.level)} ${xpBar(p)}</span>`,
+                      })}>▲ 레벨업</button>`
+                    : html`<span class="prog">Lv${String(p.level)} ${xpBar(p)}</span>`,
             );
             const nextUnlock = read(() => {
                 const t = nextPerkTier(cfg, p, p.cls);
-                return t ? `${cfg.classes[t.cls].short} ${t.level}: ${t.options.map((o) => perkDef(cfg, o).label).join(' or ')}` : '';
+                return t ? `${cfg.classes[t.cls].short} ${t.level}: ${t.options.map((o) => perkDef(cfg, o).label).join(' 또는 ')}` : '';
             });
             // a click opens the same player panel as the squad list
             return html`<tr ${attr({ class: read(() => (p.injury ? 'injured' : '')) })} ${on('click', () => selected.set({ id: p.id, from: 'squad' }))}>
@@ -899,9 +899,9 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                 <td class="name">${flag(p.nation)}<b>${p.name}</b>${$if(derived(injury, Boolean)).$then(() => html`<em class="inj">${injury}</em>`)}</td>
                 <td>${modelRegion(() => classChips(p))}</td>
                 <td>${modelRegion(() => stars(p))}</td>
-                <td><span class="fit" ${attr({ title: derived(gain, (r) => (r ? `${String(r.fit)} of 2 drills fit` : '')) })}>${derived(gain, (r) => (r ? fitDots(r.fit) : ''))}</span></td>
+                <td><span class="fit" ${attr({ title: derived(gain, (r) => (r ? `드릴 2개 중 ${String(r.fit)}개 적합` : '')) })}>${derived(gain, (r) => (r ? fitDots(r.fit) : ''))}</span></td>
                 <td><span ${attr({ class: derived(gain, (result) => (result ? 'training-xp' : 'muted')) })}>${derived(gain, (result) =>
-                    result ? `+${result.amount} XP` : 'Recovering',
+                    result ? `+${result.amount} XP` : '회복 중',
                 )}</span></td>
                 <td>${$render(progress)}</td>
                 <td><span class="muted">${nextUnlock}</span></td>
@@ -909,10 +909,10 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         };
 
         return html`<div class="card fill">
-            <h3>Squad training <small>Pick two drills per training day</small></h3>
-            <div class="training-focus" role="group" aria-label="Drills">${drillButtons}</div>
-            <p class="muted training-note">Each class trains three attributes best. Players earn more XP the more of today's drills fit their class (●● strong, ●○ normal, ○○ off-role), and a drill can lift its attribute by a point. You choose the class each level goes into. Injured players recover.</p>
-            <div class="scroll"><table class="tbl training"><thead><tr><th></th><th>Player</th><th>Classes</th><th>Potential</th><th>Fit</th><th>Session XP</th><th>Next level</th><th>Next choice</th></tr></thead>
+            <h3>선수단 훈련 <small>훈련일마다 드릴 두 가지를 고르세요</small></h3>
+            <div class="training-focus" role="group" aria-label="드릴">${drillButtons}</div>
+            <p class="muted training-note">각 포지션은 세 가지 능력치를 가장 잘 훈련합니다. 오늘의 드릴이 포지션에 맞을수록 경험치를 더 많이 얻고(●● 강함, ●○ 보통, ○○ 포지션 외), 드릴로 해당 능력치가 1 오를 수 있습니다. 레벨업 시 올릴 포지션은 직접 고릅니다. 부상 선수는 회복합니다.</p>
+            <div class="scroll"><table class="tbl training"><thead><tr><th></th><th>선수</th><th>포지션</th><th>잠재력</th><th>적합도</th><th>훈련 경험치</th><th>다음 레벨</th><th>다음 선택</th></tr></thead>
             <tbody>${$each(rows)
                 .$withKey((p) => p.id)
                 .$as(row)}</tbody></table></div>
@@ -937,23 +937,23 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         };
         const nationButton = (k: NationId | 'all') => {
             const active = derived(marketNation, (cur) => cur === k);
-            return html`<button title="${k === 'all' ? 'Every country' : NATIONS[k].name}" ${attr({ class: derived(active, (isOn) => `nation-filter${isOn ? ' on' : ''}`), 'aria-pressed': derived(active, String) })} ${on('click', () => marketNation.set(k))}>${k === 'all' ? 'All' : flag(k)}</button>`;
+            return html`<button title="${k === 'all' ? '모든 국가' : NATIONS[k].name}" ${attr({ class: derived(active, (isOn) => `nation-filter${isOn ? ' on' : ''}`), 'aria-pressed': derived(active, String) })} ${on('click', () => marketNation.set(k))}>${k === 'all' ? '전체' : flag(k)}</button>`;
         };
         return html`<div class="card fill">
-            <h3>Transfer market <small>${read(() => `${c.market.length} free agents · ${c.listed.length} on clubs' transfer lists`)} · budget ${read(() => money(u().budget))}</small></h3>
-            <div class="seg">${sourceButton('all', 'Everyone')}${sourceButton('listed', 'Transfer list')}${sourceButton('free', 'Free agents')}</div>
+            <h3>이적 시장 <small>${read(() => `자유 계약 ${c.market.length}명 · 클럽 이적 명단 ${c.listed.length}명`)} · 예산 ${read(() => money(u().budget))}</small></h3>
+            <div class="seg">${sourceButton('all', '전체')}${sourceButton('listed', '이적 명단')}${sourceButton('free', '자유 계약')}</div>
             <div class="seg">${(['all', ...CLASSES] as const).map((k) => {
                 const active = derived(marketFilter, (filter) => filter === k);
-                return html`<button ${attr({ class: derived(active, (isActive) => (isActive ? 'on' : '')), 'aria-pressed': derived(active, String) })} ${on('click', () => marketFilter.set(k))}>${k === 'all' ? 'All' : cfg.classes[k].label}</button>`;
+                return html`<button ${attr({ class: derived(active, (isActive) => (isActive ? 'on' : '')), 'aria-pressed': derived(active, String) })} ${on('click', () => marketFilter.set(k))}>${k === 'all' ? '전체' : cfg.classes[k].label}</button>`;
             })}</div>
             <div class="seg nation-seg">${(['all', ...NATION_IDS] as const).map(nationButton)}</div>
-            <div class="scroll"><table class="tbl players"><thead><tr><th></th><th>Name</th><th>Classes</th><th>Age</th><th>OVR</th><th>Potential</th><th>Abilities</th><th>At</th><th>Price</th><th>Wage</th></tr></thead>
+            <div class="scroll"><table class="tbl players"><thead><tr><th></th><th>이름</th><th>포지션</th><th>나이</th><th>OVR</th><th>잠재력</th><th>능력</th><th>소속</th><th>가격</th><th>주급</th></tr></thead>
             <tbody>${$each(list)
                 .$withKey((e) => e.p.id)
                 .$as((e) =>
                     playerRow(
                         e.p,
-                        html`<td class="at">${e.club ? html`${crest(e.club)} <span>${e.club.name}</span>` : html`<span class="muted">Free agent</span>`}</td><td ${attr({ class: read(() => (marketPrice(cfg, e) > u().budget ? 'num neg' : 'num')) })}>${read(() => money(marketPrice(cfg, e)))}</td><td class="num">${read(() => money(wage(cfg, e.p)))}</td>`,
+                        html`<td class="at">${e.club ? html`${crest(e.club)} <span>${e.club.name}</span>` : html`<span class="muted">자유 계약</span>`}</td><td ${attr({ class: read(() => (marketPrice(cfg, e) > u().budget ? 'num neg' : 'num')) })}>${read(() => money(marketPrice(cfg, e)))}</td><td class="num">${read(() => money(wage(cfg, e.p)))}</td>`,
                         'market',
                     ),
                 )}</tbody></table></div>
@@ -967,23 +967,23 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const st = stadiumOf(c, cl);
         const fee = cfg.career.matchFee[cl.tier]!;
         const up = groundUpgrade(cfg, c);
-        return html`<div class="card ground-card"><h3>Your ground <small>${st.name}</small></h3><div class="kv">
-                <div><span>Size</span><b>${sizeLabel(st.size)}</b></div>
-                <div><span>Seats</span><b>${st.capacity.toLocaleString('en')}</b></div>
-                <div><span>Gate / home match</span><b>${money(Math.round(fee * cfg.career.ground[st.size].gate))}</b></div>
+        return html`<div class="card ground-card"><h3>내 경기장 <small>${st.name}</small></h3><div class="kv">
+                <div><span>규모</span><b>${sizeLabel(st.size)}</b></div>
+                <div><span>좌석</span><b>${st.capacity.toLocaleString('en')}</b></div>
+                <div><span>홈 경기당 입장 수입</span><b>${money(Math.round(fee * cfg.career.ground[st.size].gate))}</b></div>
             </div>
             <div class="ground-actions">
-                <button class="ghost" ${on('click', () => groundOpen.set(true))}>Edit ground</button>
+                <button class="ghost" ${on('click', () => groundOpen.set(true))}>경기장 편집</button>
                 ${
                     up
                         ? html`<button class="primary" ${attr({ disabled: !!up.blocked })} ${on('click', () => {
                               const err = expandGround(cfg, c);
                               if (err) return toast(err);
                               audio.play('coin');
-                              toast(`${st.name} expanded!`);
+                              toast(`${st.name} 확장 완료!`);
                               changed();
-                          })}>Expand to ${sizeLabel(up.size).toLowerCase()} · ${money(up.cost)}</button>${up.blocked ? html`<small class="muted">${up.blocked}</small>` : html``}`
-                        : html`<small class="muted">As big as grounds get.</small>`
+                          })}>${sizeLabel(up.size).toLowerCase()} 규모로 확장 · ${money(up.cost)}</button>${up.blocked ? html`<small class="muted">${up.blocked}</small>` : html``}`
+                        : html`<small class="muted">더 이상 커질 수 없는 규모입니다.</small>`
                 }
             </div></div>`;
     };
@@ -992,20 +992,20 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const look = grain<GroundLook>({ name: st.name, pattern: st.pattern, bands: st.bands, condition: st.condition, flag: st.flag });
         const size = grain<StadiumSize>(st.size);
         return Dialog({
-            label: 'Your ground',
+            label: '내 경기장',
             dismiss: () => groundOpen.set(false),
             className: 'modal ground-modal',
-            children: html`<div class="modal-body"><header><h2>Your ground</h2></header>
+            children: html`<div class="modal-body"><header><h2>내 경기장</h2></header>
                 <div class="modal-scroll">${GroundEditor(cfg, look, size)}</div>
-                <footer><button class="ghost" ${on('click', () => groundOpen.set(false))}>Cancel</button><button class="primary" ${on(
+                <footer><button class="ghost" ${on('click', () => groundOpen.set(false))}>취소</button><button class="primary" ${on(
                     'click',
                     () => {
                         setGroundLook(c, look());
                         groundOpen.set(false);
-                        toast('Ground updated.');
+                        toast('경기장을 수정했습니다.');
                         changed();
                     },
-                )}>Save</button></footer></div>`,
+                )}>저장</button></footer></div>`,
         });
     };
 
@@ -1014,91 +1014,91 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             const cl = u();
             const fee = cfg.career.matchFee[cl.tier]!;
             return html`
-                <div class="card"><h3>Overview</h3><div class="kv">
-                    <div><span>Budget</span><b class="${cl.budget < 0 ? 'neg' : ''}">${money(cl.budget)}</b></div>
-                    <div><span>Wage bill / matchday</span><b>${money(wageBill(cfg, cl))}</b></div>
-                    <div><span>Match fee</span><b>${money(fee)}</b></div>
-                    <div><span>Win bonus</span><b>${money(Math.round(fee * cfg.career.winBonus))}</b></div>
-                    <div><span>Squad value</span><b>${money(cl.squad.reduce((a, p) => a + playerValue(cfg, p), 0))}</b></div>
+                <div class="card"><h3>개요</h3><div class="kv">
+                    <div><span>예산</span><b class="${cl.budget < 0 ? 'neg' : ''}">${money(cl.budget)}</b></div>
+                    <div><span>경기일당 주급 총액</span><b>${money(wageBill(cfg, cl))}</b></div>
+                    <div><span>경기 수당</span><b>${money(fee)}</b></div>
+                    <div><span>승리 보너스</span><b>${money(Math.round(fee * cfg.career.winBonus))}</b></div>
+                    <div><span>선수단 가치</span><b>${money(cl.squad.reduce((a, p) => a + playerValue(cfg, p), 0))}</b></div>
                 </div></div>
-                <div class="card"><h3>Season goals</h3><ul class="alerts">
-                    <li>Win the division: ${money(fee * cfg.career.goalTitle)}</li>
-                    <li>Top four: ${money(fee * cfg.career.goalTop4)}</li>
-                    <li>Avoid relegation: ${money(fee * cfg.career.goalSurvive)}</li>
-                </ul><p class="muted">Higher divisions pay far more per match, and so do their players.</p></div>
+                <div class="card"><h3>시즌 목표</h3><ul class="alerts">
+                    <li>디비전 우승: ${money(fee * cfg.career.goalTitle)}</li>
+                    <li>상위 4위: ${money(fee * cfg.career.goalTop4)}</li>
+                    <li>강등 면하기: ${money(fee * cfg.career.goalSurvive)}</li>
+                </ul><p class="muted">상위 디비전일수록 경기당 수입이 훨씬 크고, 선수들의 요구액도 그만큼 큽니다.</p></div>
             `;
         })}${modelRegion(groundCard)}</div>
-        <div class="card fill"><h3>Ledger</h3><div class="scroll"><table class="tbl ledger"><tbody>${$each(read(() => c.ledger.slice(0, 60))).$as((l) => html`<tr><td class="muted">S${String(l.season)} D${String(l.day)}</td><td>${l.label}</td><td class="num ${l.amount < 0 ? 'neg' : 'pos'}">${money(l.amount)}</td></tr>`)}</tbody></table></div></div>
+        <div class="card fill"><h3>장부</h3><div class="scroll"><table class="tbl ledger"><tbody>${$each(read(() => c.ledger.slice(0, 60))).$as((l) => html`<tr><td class="muted">${String(l.season)}시즌 ${String(l.day)}일</td><td>${l.label}</td><td class="num ${l.amount < 0 ? 'neg' : 'pos'}">${money(l.amount)}</td></tr>`)}</tbody></table></div></div>
     </div>`;
 
     // ------------------------------------------------------------ match preview
     // ------------------------------------------------------------ coach tips: each screen explained once
     const HUB_TIPS: Record<string, { title: string; text: string | string[] }> = {
         overview: {
-            title: 'Welcome to the club',
-            text: 'The gold button advances the calendar or opens match prep. Check Season Plan for league fixtures, cup dates and training sessions. Letters arrive between matches. Finish in the top two to go up a division.',
+            title: '클럽에 오신 것을 환영합니다',
+            text: '금색 버튼을 누르면 일정이 진행되거나 경기 준비 화면이 열립니다. 시즌 일정에서 리그 경기, 컵 대회 날짜, 훈련일을 확인하세요. 경기 사이에 편지가 도착합니다. 상위 2위 안에 들면 한 디비전 승격합니다.',
         },
         squad: {
-            title: 'Your squad',
+            title: '내 선수단',
             text: PLAYER_DEVELOPMENT.lines,
         },
         tactics: {
-            title: 'Pick your XI',
-            text: 'Choose a formation, then click a slot to pick who plays there. Out of position a player is weaker: the number is their fit for that slot. Auto-pick fills every slot with the best fit. Good players left on the bench will come and ask why.',
+            title: '선발 11명 정하기',
+            text: '포메이션을 고른 뒤 슬롯을 눌러 그 자리에서 뛸 선수를 정하세요. 자리가 맞지 않으면 선수가 약해지며, 숫자는 그 슬롯에 대한 적합도입니다. 자동 선택은 모든 슬롯을 가장 잘 맞는 선수로 채웁니다. 벤치에 남은 좋은 선수들은 이유를 물으러 올 겁니다.',
         },
         training: {
-            title: 'Training days',
+            title: '훈련일',
             text: [
-                'Pick one focus for the squad. Players suited to the drill (class and attributes) earn more XP. Injured players sit it out and recover.',
-                'When a player has enough XP, you choose the class his level goes into: one he has, or a new outfield class. At class levels 2, 5 and 8 he also picks one of two perks. The other is gone for good.',
+                '선수단의 훈련 초점을 고르세요. 드릴에 맞는 선수(포지션과 능력치)는 경험치를 더 많이 얻습니다. 부상 선수는 쉬면서 회복합니다.',
+                '선수의 경험치가 충분해지면 레벨이 들어갈 포지션을 고릅니다. 이미 가진 포지션이나 새 필드 포지션 중에서 선택합니다. 포지션 레벨 2, 5, 8에서는 두 가지 특전 중 하나도 고르며, 나머지는 영영 사라집니다.',
             ],
         },
         league: {
-            title: 'The league',
+            title: '리그',
             text: [
-                'Ten clubs, everyone plays everyone home and away: 3 points for a win, 1 for a draw. The top two go up, the bottom two go down. Derbies swing morale twice as hard.',
-                "Every other nation plays its own five divisions alongside yours: the flags switch between them. The top two of each top flight qualify for next season's Champions Cup.",
+                '10개 클럽이 서로 홈 앤드 어웨이로 맞붙습니다. 승리 3점, 무승부 1점. 상위 2팀은 승격, 하위 2팀은 강등됩니다. 더비는 사기를 두 배로 크게 흔듭니다.',
+                '다른 나라들도 각자 5개 디비전으로 함께 진행됩니다. 국기를 눌러 전환하세요. 각 나라 1부 리그 상위 2팀은 다음 시즌 챔피언스컵에 진출합니다.',
             ],
         },
         cup: {
-            title: 'Cups',
+            title: '컵 대회',
             text: [
-                'The Pyramid Cup is open to every club in your five divisions: single matches, penalties on a draw, so a minnow can go a long way.',
-                "The Champions Cup is for the best: the top two of every nation's top flight, 32 clubs. Win your league's top division places to get in.",
+                '피라미드 컵은 5개 디비전의 모든 클럽이 참가합니다. 단판 승부에 무승부면 승부차기라서 약팀도 멀리 갈 수 있습니다.',
+                '챔피언스컵은 최강팀들의 대회입니다. 각 나라 1부 리그 상위 2팀, 총 32개 클럽이 참가합니다. 자국 1부 리그에서 상위권을 차지해 진출하세요.',
             ],
         },
         market: {
-            title: 'Transfers',
+            title: '이적',
             text: [
-                'New players reach the market all season, from every nation. Buy young, train them up, and sell at a profit, or keep them. Mind the wages: the fee is paid once, wages every matchday.',
-                'Other clubs shop too, and they may bid for your best players. An offer arrives like a letter: take the money or keep him.',
+                '새 선수가 시즌 내내 모든 나라에서 시장에 나옵니다. 어린 선수를 사서 키운 뒤 이익을 남기고 팔거나 계속 데리고 있으세요. 주급을 주의하세요. 이적료는 한 번이지만 주급은 경기일마다 나갑니다.',
+                '다른 클럽도 선수를 찾고 있어서 내 최고 선수에게 제안할 수 있습니다. 제안은 편지처럼 도착합니다. 돈을 받거나 선수를 지키세요.',
             ],
         },
         finances: {
-            title: 'Money',
-            text: 'Income comes from match fees, win bonuses, season goals (survival, top four, the title) and player sales. Wages go out every matchday. Run dry and the market closes to you.',
+            title: '돈',
+            text: '수입은 경기 수당, 승리 보너스, 시즌 목표(잔류, 상위 4위, 우승), 선수 판매에서 나옵니다. 주급은 경기일마다 나갑니다. 돈이 바닥나면 이적 시장이 막힙니다.',
         },
         playbook: {
-            title: 'The playbook',
-            text: 'Every class, ability and passive in one place. At class levels 2, 5 and 8 a player picks one of two (marked "or"); the other is gone for good. Passives are always on.',
+            title: '플레이북',
+            text: '모든 포지션, 능력, 패시브를 한곳에서 볼 수 있습니다. 포지션 레벨 2, 5, 8에서 선수는 둘 중 하나("또는"으로 표시)를 고르며, 나머지는 영영 사라집니다. 패시브는 항상 적용됩니다.',
         },
         prep: {
-            title: 'Match prep',
-            text: 'Read the opponent first: their style, form and danger men. Pick a game plan; your auto-managed players follow it, and countering their style lifts your side on the day. Then a team talk, and play it on the board or quick-sim it.',
+            title: '경기 준비',
+            text: '먼저 상대를 파악하세요. 스타일, 폼, 위험 선수를 확인합니다. 게임 플랜을 고르면 자동 관리 선수들이 따르고, 상대 스타일을 받아치면 당일 전력이 올라갑니다. 그다음 팀 토크를 하고 보드에서 직접 플레이하거나 빠르게 시뮬레이션하세요.',
         },
     };
     /** A one-time note from the coach inside a dialog (level-up prompt, first offer); "Got it" hides it for good. */
     const NOTES: Record<string, string> = {
         levelup:
-            'Your call, boss: pick the class this level goes into. Stick with what he knows, or teach him something new. At class levels 2, 5 and 8 you also choose a perk; the other option is gone, so think about what the team needs.',
-        bid: 'A club wants one of ours. Their money is real, and so is the gap he leaves. Sell, and you can rebuild from the market; say no, and the squad sees you back them.',
+            '결정은 감독님 몫입니다. 이번 레벨을 넣을 포지션을 고르세요. 아는 것을 키우거나 새로운 것을 가르칠 수 있습니다. 포지션 레벨 2, 5, 8에서는 특전도 고르는데, 다른 선택지는 사라지니 팀에 필요한 것을 생각해 보세요.',
+        bid: '어느 클럽이 우리 선수를 원합니다. 돈은 진짜지만 그 선수가 남기는 공백도 진짜입니다. 팔면 시장에서 다시 보강할 수 있고, 거절하면 선수단은 감독님이 자기들 편이라고 느낍니다.',
     };
     const coachNote = (id: keyof typeof NOTES) => {
         const key = `hub-${id}`;
         const show = derived(prefs, (p) => p.tips && !p.tipsSeen.includes(key));
         return $if(show).$then(
             () =>
-                html`<div class="coach-note"><small>Coach Marlow</small><p>${NOTES[id]!}</p><button class="ghost" ${on('click', () => setPref('tipsSeen', [...prefs().tipsSeen, key]))}>Got it</button></div>`,
+                html`<div class="coach-note"><small>말로 코치</small><p>${NOTES[id]!}</p><button class="ghost" ${on('click', () => setPref('tipsSeen', [...prefs().tipsSeen, key]))}>확인</button></div>`,
         );
     };
     const coachTip = (id: Tab | 'prep', p: ReturnType<typeof prefs>) => {
@@ -1112,9 +1112,9 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const frames = cfg.animFrames.shout ?? 12;
         return html`<div class="tip ${id === 'prep' ? 'prep-tip' : 'hub-tip'}">
             <div class="coach"><div class="sprite" style="${spriteStyle(cfg, 'coach', 'shout', 'down')};width:${String(size)}px;height:${String(size)}px;background-size:${String(frames * size)}px ${String(size)}px;--strip:${String(frames * size)}px"></div></div>
-            <div class="tip-body"><small>Coach Marlow</small><h3>${tip.title}</h3>
+            <div class="tip-body"><small>말로 코치</small><h3>${tip.title}</h3>
                 ${(typeof tip.text === 'string' ? [tip.text] : tip.text).map((paragraph) => html`<p>${paragraph}</p>`)}
-                <div class="tip-actions"><button class="ghost" ${on('click', () => done(true))}>No more tips</button><button class="primary" ${on('click', () => done(false))}>Got it</button></div></div>
+                <div class="tip-actions"><button class="ghost" ${on('click', () => done(true))}>팁 끄기</button><button class="primary" ${on('click', () => done(false))}>확인</button></div></div>
         </div>`;
     };
     const hubTip = derived(combined([tab, prefs]), ([id, p]) => coachTip(id, p));
@@ -1159,42 +1159,42 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
         const edgeNote = (s: TeamStyle) => {
             const e = planEdge(s, oppStyle);
             return e > 0
-                ? html`<em class="pos">counters ${cfg.ai.styles[oppStyle].label}</em>`
+                ? html`<em class="pos">${cfg.ai.styles[oppStyle].label}에 강함</em>`
                 : e < 0
-                  ? html`<em class="neg">countered by ${cfg.ai.styles[oppStyle].label}</em>`
+                  ? html`<em class="neg">${cfg.ai.styles[oppStyle].label}에 약함</em>`
                   : html``;
         };
         const styles = Object.keys(cfg.ai.styles) as TeamStyle[];
         const selectedPlan = read(() => prep.plan);
         const selectedTalk = read(() => prep.talk);
         const counter = derived(selectedPlan, (plan) =>
-            COUNTERS[plan] ? `; ${cfg.ai.styles[plan].label} beats ${cfg.ai.styles[COUNTERS[plan]!].label}` : '',
+            COUNTERS[plan] ? `. ${cfg.ai.styles[plan].label}은(는) ${cfg.ai.styles[COUNTERS[plan]!].label}에 강합니다` : '',
         );
         return Dialog({
-            label: 'Match prep',
+            label: '경기 준비',
             dismiss: () => preview.set(false),
             children: html`<div class="modal-body preview prep">
-                <header><h2>Match prep · ${t.cup ? `${CUP_NAME} · ${t.cup.label}` : `Matchday ${t.round + 1}`}${derby ? html` <span class="derby">Derby</span>` : html``}</h2><button class="ghost" ${on('click', () => preview.set(false))}>✕</button></header>
+                <header><h2>경기 준비 · ${t.cup ? `${CUP_NAME} · ${t.cup.label}` : `${t.round + 1}라운드`}${derby ? html` <span class="derby">더비</span>` : html``}</h2><button class="ghost" ${on('click', () => preview.set(false))}>✕</button></header>
                 <div class="modal-scroll">
                     ${$render(prepTip)}
                     <div class="vs big">${crest(h)}<b>${h.name}</b><span>vs</span><b>${a.name}</b>${crest(a)}</div>
-                    <p class="venue">${st.name} · ${sizeLabel(st.size)} · ${conditionsLabel(prep.conditions)} · Referee ${prep.referee.name} (${ref.label})${t.cup ? ' · Draws go to penalties' : ''}</p>
+                    <p class="venue">${st.name} · ${sizeLabel(st.size)} · ${conditionsLabel(prep.conditions)} · 심판 ${prep.referee.name} (${ref.label})${t.cup ? ' · 무승부 시 승부차기' : ''}</p>
                     <div class="grid-2">
-                        <div class="card"><h4>Scouting: ${opp.short}</h4>
+                        <div class="card"><h4>상대 분석: ${opp.short}</h4>
                             <div class="kv">
-                                <div><span>Style</span><b>${cfg.ai.styles[oppStyle].label}</b></div>
-                                <div><span>Formation</span><b>${opp.formationId}</b></div>
+                                <div><span>스타일</span><b>${cfg.ai.styles[oppStyle].label}</b></div>
+                                <div><span>포메이션</span><b>${opp.formationId}</b></div>
                                 <div><span>${leagueName(opp.nation, opp.tier)}</span><b>${pos ? ordinal(pos) : '–'}</b></div>
-                                <div><span>Form</span><b class="form">${form.length ? form.map((r) => html`<i class="r${r}">${r}</i>`) : '–'}</b></div>
-                                <div><span>Strength</span><b>${squadOvr(cfg, opp).toFixed(0)} vs your ${squadOvr(cfg, u()).toFixed(0)}</b></div>
+                                <div><span>최근 폼</span><b class="form">${form.length ? form.map((r) => html`<i class="r${r}">${r === 'W' ? '승' : r === 'D' ? '무' : '패'}</i>`) : '–'}</b></div>
+                                <div><span>전력</span><b>${squadOvr(cfg, opp).toFixed(0)} vs 우리 ${squadOvr(cfg, u()).toFixed(0)}</b></div>
                             </div>
-                            <p class="muted">${cfg.ai.styles[oppStyle].note}${derby ? ' This is the derby: the result swings morale twice as hard.' : ''}</p>
-                            <h5>Watch out for</h5><ul class="xi">${threats.map((p) => html`<li>${portrait(opp, p, 24)}<span>${p.name}</span><em>${classLabel(cfg, p)} · ${String(seasonLine(c, p.id)?.goals ?? 0)} goals</em></li>`)}</ul>
+                            <p class="muted">${cfg.ai.styles[oppStyle].note}${derby ? ' 더비 경기입니다. 결과가 사기를 두 배로 크게 흔듭니다.' : ''}</p>
+                            <h5>경계 대상</h5><ul class="xi">${threats.map((p) => html`<li>${portrait(opp, p, 24)}<span>${p.name}</span><em>${classLabel(cfg, p)} · ${String(seasonLine(c, p.id)?.goals ?? 0)}골</em></li>`)}</ul>
                         </div>
-                        <div class="card"><h4>Your game plan</h4>
+                        <div class="card"><h4>게임 플랜</h4>
                             <div class="plan-list">${styles.map((s) => html`<button ${attr({ class: derived(selectedPlan, (plan) => `plan ${plan === s ? 'on' : ''}`) })} ${on('click', () => setPlan(s))}><b>${cfg.ai.styles[s].label}</b>${edgeNote(s)}<span>${cfg.ai.styles[s].note}</span></button>`)}</div>
-                            <p class="muted">Your auto-managed players follow the plan. Countering their style lifts the side on the day${counter}.</p>
-                            <h4>Team talk <small>mood: ${moraleLabel(story(c).morale)}</small></h4>
+                            <p class="muted">자동 관리 선수들이 플랜을 따릅니다. 상대 스타일을 받아치면 당일 전력이 올라갑니다${counter}.</p>
+                            <h4>팀 토크 <small>분위기: ${moraleLabel(story(c).morale)}</small></h4>
                             <div class="plan-list talks">${(Object.keys(TALKS) as TeamTalk[]).map((k) => html`<button ${attr({ class: derived(selectedTalk, (talk) => `plan ${talk === k ? 'on' : ''}`) })} ${on('click', () => setTalk(k))}><b>${TALKS[k].label}</b><span>${TALKS[k].note}</span></button>`)}</div>
                         </div>
                     </div>
@@ -1203,16 +1203,16 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                     <button class="ghost" ${on('click', () => {
                         preview.set(false);
                         tab.set('tactics');
-                    })}>Change lineup</button>
+                    })}>라인업 변경</button>
                     <button ${on('click', () => {
                         preview.set(false);
                         actions.simMatch();
                         changed();
-                    })}>Quick sim</button>
+                    })}>빠른 시뮬레이션</button>
                     <button class="primary" ${on('click', () => {
                         preview.set(false);
                         actions.playMatch();
-                    })}>Play match →</button>
+                    })}>경기 시작 →</button>
                 </footer>
             </div>`,
         });
@@ -1234,7 +1234,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             className: 'modal letter-modal',
             children: html`<div class="letter">
             <div class="seal">✉</div>
-            <small>From: ${l.from}</small>
+            <small>보낸 사람: ${l.from}</small>
             <h2>${l.title}</h2>
             <p>${l.body.replace(/\*/g, '')}</p>
             ${
@@ -1243,7 +1243,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                           const p = u().squad.find((q) => q.id === l.subject);
                           return html`${coachNote('bid')}${
                               p
-                                  ? html`<p class="bid-facts">${flag(p.nation)} <b>${p.name}</b> · ${classLabel(cfg, p)} · OVR ${String(ovr(cfg, p))} · age ${String(p.age)} · value ${money(playerValue(cfg, p))}${u().lineup.includes(p.id) ? ' · in your XI' : ''}</p>`
+                                  ? html`<p class="bid-facts">${flag(p.nation)} <b>${p.name}</b> · ${classLabel(cfg, p)} · OVR ${String(ovr(cfg, p))} · ${String(p.age)}세 · 가치 ${money(playerValue(cfg, p))}${u().lineup.includes(p.id) ? ' · 선발 멤버' : ''}</p>`
                                   : html``
                           }`;
                       })()
@@ -1256,7 +1256,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
 
     const CeremonyDialog = () => {
         const r = ceremony()!;
-        const headline = r.champion ? 'Champions!' : r.promoted ? 'Promoted!' : r.relegated ? 'Relegated' : 'Season complete';
+        const headline = r.champion ? '우승!' : r.promoted ? '승격!' : r.relegated ? '강등' : '시즌 종료';
         const trophy = r.champion ? 'cup_gold' : r.promoted ? 'cup_silver' : r.relegated ? '' : 'medal_silver';
         const icon = { cup: '♛', medal: '◆', boot: '⚑', star: '★' } as const;
         return Dialog({
@@ -1265,28 +1265,28 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             children: html`<div class="modal-body ceremony ${r.champion || r.promoted ? 'glory' : r.relegated ? 'gloom' : ''}">
             ${r.champion || r.promoted ? html`<div class="confetti">${Array.from({ length: 40 }, (_, i) => html`<i style="left:${String((i * 37) % 100)}%;animation-delay:${String((i % 10) * 120)}ms;--c:${['#f2bf2f', '#56b4e9', '#ffffff', '#cc79a7'][i % 4]!}"></i>`)}</div>` : html``}
             <div class="modal-scroll">
-                <small>Season ${String(r.season)} · ${leagueName(c.nation, r.tier)}</small>
+                <small>${String(r.season)}시즌 · ${leagueName(c.nation, r.tier)}</small>
                 <h2>${headline}</h2>
                 ${trophy ? html`<img class="trophy" src="assets/props/${trophy}.png" alt="" />` : html``}
-                <p class="placing">Finished ${ordinal(r.position)} of ${String(cfg.career.clubsPerDivision)}</p>
+                <p class="placing">${String(cfg.career.clubsPerDivision)}팀 중 ${ordinal(r.position)}</p>
                 <ul class="awards">${r.awards.map((a) => html`<li><span class="aw-ic">${icon[a.icon]}</span><div><b>${a.title}</b><span>${a.who}</span><small>${a.detail}</small></div></li>`)}</ul>
                 <ul class="alerts">${r.lines.map((l) => html`<li>${l}</li>`)}</ul>
             </div>
-            <footer><button class="primary" ${on('click', () => ceremony.set(null))}>On to season ${String(r.season + 1)} →</button></footer>
+            <footer><button class="primary" ${on('click', () => ceremony.set(null))}>${String(r.season + 1)}시즌으로 →</button></footer>
         </div>`,
         });
     };
 
     // ------------------------------------------------------------ level-up prompt
     const STAT_SHORT: Record<string, string> = {
-        speed: 'SPD',
-        pace: 'PAC',
-        passing: 'PAS',
-        shooting: 'SHO',
-        dribbling: 'DRI',
-        tackling: 'TAC',
-        reflexes: 'REF',
-        composure: 'COM',
+        speed: '속도',
+        pace: '주력',
+        passing: '패스',
+        shooting: '슈팅',
+        dribbling: '드리블',
+        tackling: '태클',
+        reflexes: '반사',
+        composure: '침착',
     };
     const LevelUpDialog = () => {
         const view = derived(combined([version, levelUp]), ([, want]) => {
@@ -1297,7 +1297,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                 return html``;
             }
             const others = queue.length - 1;
-            const head = html`<div class="lu-player">${portrait(u(), p, 56)}<div><h3>${p.name}</h3><p>${classLabel(cfg, p)} · level ${String(p.level)} · ${String(Math.round(p.xp))} XP banked</p></div></div>`;
+            const head = html`<div class="lu-player">${portrait(u(), p, 56)}<div><h3>${p.name}</h3><p>${classLabel(cfg, p)} · 레벨 ${String(p.level)} · 경험치 ${String(Math.round(p.xp))} 보유</p></div></div>`;
             const perks = pendingPerks(cfg, p);
             if (perks.length) {
                 const t = perks[0]!;
@@ -1312,9 +1312,9 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                             toast(text);
                             changed();
                         }
-                    })}><span class="lu-ic">${ab ? ab.icon : '◆'}</span><b>${d.label}</b><small>${ab ? `Ability · ${ab.phase === 'act' ? 'after moving' : 'before moving'}${ab.cooldown ? ` · recharges ${String(ab.cooldown)} rounds` : ''}` : 'Passive · always on'}</small><p>${desc}</p></button>`;
+                    })}><span class="lu-ic">${ab ? ab.icon : '◆'}</span><b>${d.label}</b><small>${ab ? `능력 · ${ab.phase === 'act' ? '이동 후' : '이동 전'}${ab.cooldown ? ` · 쿨다운 ${String(ab.cooldown)}라운드` : ''}` : '패시브 · 항상 적용'}</small><p>${desc}</p></button>`;
                 };
-                return html`${head}<p class="lu-step">${cfg.classes[t.cls].label} ${String(t.level)}: choose one. The other is gone for good.</p>
+                return html`${head}<p class="lu-step">${cfg.classes[t.cls].label} ${String(t.level)}: 하나를 고르세요. 나머지는 영영 사라집니다.</p>
                     <div class="lu-cards perks">${t.options.map(card)}</div>${foot(others, false)}`;
             }
             const card = (cls: ClassId) => {
@@ -1329,21 +1329,21 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
                         toast(text);
                         changed();
                     }
-                })}><b>${cfg.classes[cls].label}</b><small>${now ? `${cfg.classes[cls].short} ${String(now)} → ${String(now + 1)}` : 'New class'}</small>
-                    <p>Grows ${top.map((k) => STAT_SHORT[k]).join(', ')}</p>
-                    ${tier ? html`<p class="lu-tier">${tier.options.length > 1 ? 'Choose' : 'Gain'}: ${tier.options.map((o) => perkDef(cfg, o as PerkId).label).join(' or ')}</p>` : html``}
+                })}><b>${cfg.classes[cls].label}</b><small>${now ? `${cfg.classes[cls].short} ${String(now)} → ${String(now + 1)}` : '새 포지션'}</small>
+                    <p>성장: ${top.map((k) => STAT_SHORT[k]).join(', ')}</p>
+                    ${tier ? html`<p class="lu-tier">${tier.options.length > 1 ? '선택' : '획득'}: ${tier.options.map((o) => perkDef(cfg, o as PerkId).label).join(' 또는 ')}</p>` : html``}
                 </button>`;
             };
-            return html`${head}<p class="lu-step">Which class does this level go into?</p>
+            return html`${head}<p class="lu-step">이번 레벨을 어떤 포지션에 넣을까요?</p>
                 <div class="lu-cards">${levelUpOptions(p).map(card)}</div>${foot(others, true)}`;
         });
         const foot = (others: number, classStep: boolean) =>
-            html`<footer class="lu-foot"><span class="muted">${others ? `${String(others)} more ready after this` : classStep ? 'New classes start at level 1: no abilities until level 2.' : ''}</span><button class="ghost" ${on('click', () => levelUp.set(null))}>Decide later</button></footer>`;
+            html`<footer class="lu-foot"><span class="muted">${others ? `이후 ${String(others)}명 더 레벨업 가능` : classStep ? '새 포지션은 레벨 1에서 시작하며, 레벨 2까지 능력이 없습니다.' : ''}</span><button class="ghost" ${on('click', () => levelUp.set(null))}>나중에 결정</button></footer>`;
         return Dialog({
-            label: 'Level up',
+            label: '레벨업',
             dismiss: () => levelUp.set(null),
             className: 'modal levelup-modal',
-            children: html`<div class="modal-body levelup"><header><h2>▲ Level up</h2></header><div class="modal-scroll">${coachNote('levelup')}${$render(view)}</div></div>`,
+            children: html`<div class="modal-body levelup"><header><h2>▲ 레벨업</h2></header><div class="modal-scroll">${coachNote('levelup')}${$render(view)}</div></div>`,
         });
     };
 
@@ -1354,7 +1354,7 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             dismiss: () => modal.set(null),
             children: html`<div class="modal-body notice">
             <header><h2>${m.title}</h2></header><div class="modal-scroll"><ul class="alerts">${m.lines.map((l) => html`<li>${l}</li>`)}</ul></div>
-            <footer><button class="primary" ${on('click', () => modal.set(null))}>Continue</button></footer></div>`,
+            <footer><button class="primary" ${on('click', () => modal.set(null))}>계속</button></footer></div>`,
         });
     };
 
@@ -1385,8 +1385,8 @@ export const Hub = (cfg: GameConfig, c: Career, actions: HubActions, modal: Writ
             )}><span>${icon}</span>${label}</button>`;
         })}
         <div class="spacer"></div>
-        <button class="menu-extra" ${on('click', actions.settings)}><span>⚙</span>Settings</button>
-        <button class="ghost" ${on('click', actions.exit)}>Save & exit</button>
+        <button class="menu-extra" ${on('click', actions.settings)}><span>⚙</span>설정</button>
+        <button class="ghost" ${on('click', actions.exit)}>저장 후 종료</button>
     </nav>`;
 
     return html`<div class="hub" ${clearToast}>

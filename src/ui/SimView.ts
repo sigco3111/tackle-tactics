@@ -81,7 +81,7 @@ export const SimView = (ctl: MatchController, opts: { title: string; doneLabel: 
     });
 
     const score = (t: TeamSide) => derived(ctl.tick, () => String(m.state.score[t]));
-    const clock = derived(ctl.tick, () => (m.state.over ? 'Full time' : `${ctl.stats.minute()}'`));
+    const clock = derived(ctl.tick, () => (m.state.over ? '경기 종료' : `${ctl.stats.minute()}'`));
     const progress = derived(ctl.tick, () => {
         const s = m.state;
         const done = s.over ? 1 : (s.round - 1 + s.turnIndex / Math.max(1, s.order.length)) / ctl.cfg.match.rounds;
@@ -123,47 +123,47 @@ export const SimView = (ctl: MatchController, opts: { title: string; doneLabel: 
                         )}</ul>
                 </section>
                 <aside class="opts sim-side">
-                    <h4>Goals</h4>
+                    <h4>득점</h4>
                     <ul class="sim-goals">${$each(goals)
                         .$withKey((g) => String(g.i))
                         .$as(
                             (g) =>
                                 html`<li class="t${String(g.team)}"><b>${String(g.minute)}'</b> ${name(g.scorer)}${g.assist ? html`<em> · ${name(g.assist)}</em>` : html``}</li>`,
                         )}</ul>
-                    <h4>Cards</h4>
+                    <h4>카드</h4>
                     <ul class="sim-goals">${$each(cards)
                         .$withKey((x) => x.id)
                         .$as(
                             (x) => html`<li class="t${String(x.team)}"><i class="cardchip ${x.red ? 'red' : 'yellow'}"></i> ${x.name}</li>`,
                         )}</ul>
-                    <h4>Stats</h4>
+                    <h4>기록</h4>
                     <div class="rbars">
                         ${bar(
-                            'Possession',
+                            '점유율',
                             (t) => team(t).possession,
                             (v) => `${v}%`,
                         )}
-                        ${bar('Shots', (t) => team(t).shots)}
-                        ${bar('On target', (t) => team(t).onTarget)}
-                        ${bar('Passes completed', (t) => team(t).passesOk)}
-                        ${bar('Tackles won', (t) => team(t).tacklesWon)}
+                        ${bar('슈팅', (t) => team(t).shots)}
+                        ${bar('유효 슈팅', (t) => team(t).onTarget)}
+                        ${bar('패스 성공', (t) => team(t).passesOk)}
+                        ${bar('태클 성공', (t) => team(t).tacklesWon)}
                     </div>
                 </aside>
             </div>
             <footer class="sim-foot">
                 <div class="sim-controls">
                     <div class="seg">
-                        <button ${attr({ class: derived(everything, (e) => (e ? '' : 'on')) })} ${on('click', () => everything.set(false))}>Highlights</button>
-                        <button ${attr({ class: derived(everything, (e) => (e ? 'on' : '')) })} ${on('click', () => everything.set(true))}>Everything</button>
+                        <button ${attr({ class: derived(everything, (e) => (e ? '' : 'on')) })} ${on('click', () => everything.set(false))}>하이라이트</button>
+                        <button ${attr({ class: derived(everything, (e) => (e ? 'on' : '')) })} ${on('click', () => everything.set(true))}>전체</button>
                     </div>
                     <div class="seg">
-                        <button ${attr({ class: derived(fast, (f) => (f ? '' : 'on')) })} ${on('click', () => fast.set(false))}>Normal</button>
-                        <button ${attr({ class: derived(fast, (f) => (f ? 'on' : '')) })} ${on('click', () => fast.set(true))}>Fast</button>
+                        <button ${attr({ class: derived(fast, (f) => (f ? '' : 'on')) })} ${on('click', () => fast.set(false))}>보통</button>
+                        <button ${attr({ class: derived(fast, (f) => (f ? 'on' : '')) })} ${on('click', () => fast.set(true))}>빠르게</button>
                     </div>
                 </div>
                 ${$if(finished)
                     .$then(() => html`<button class="primary" autofocus ${on('click', opts.onDone)}>${opts.doneLabel} →</button>`)
-                    .$else(() => html`<button class="ghost" ${on('click', () => (run.skipping = true))}>Skip to full time</button>`)}
+                    .$else(() => html`<button class="ghost" ${on('click', () => (run.skipping = true))}>경기 종료까지 건너뛰기</button>`)}
             </footer>
         </div>
     </main>`;

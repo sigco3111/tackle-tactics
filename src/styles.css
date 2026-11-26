@@ -30,8 +30,8 @@
     --bad: #ff5a5f;
     --accent: var(--gold);
 
-    --display: 'TT Coin', 'TT Display', 'TT Symbols', 'TT Symbols 2', 'Arial Narrow', sans-serif;
-    --body: 'TT Coin', 'TT Body', 'TT Symbols', 'TT Symbols 2', system-ui, sans-serif;
+    --display: 'TT Coin', 'TT Display', 'TT Symbols', 'TT Symbols 2', 'Noto Sans KR', 'Arial Narrow', sans-serif;
+    --body: 'TT Coin', 'TT Body', 'TT Symbols', 'TT Symbols 2', 'Noto Sans KR', system-ui, sans-serif;
     --pixel: 'TT Coin', 'TT Pixel', 'TT Symbols', 'TT Symbols 2', ui-monospace, monospace;
     --shadow: 3px 3px 0 #000a;
 }
@@ -308,6 +308,14 @@ a {
     animation-iteration-count: infinite;
 }
 @keyframes strip {
+    from {
+        background-position-x: 0;
+    }
+    to {
+        background-position-x: calc(-1 * var(--strip));
+    }
+}
+@keyframes strip-b {
     from {
         background-position-x: 0;
     }
@@ -3096,7 +3104,7 @@ dialog.drawer-wrap:not([open]) {
     font-size-adjust: 0.6;
 }
 #app[data-font='clean'] {
-    --display: 'TT Coin', 'TT Body', 'TT Symbols', 'TT Symbols 2', system-ui, sans-serif;
+    --display: 'TT Coin', 'TT Body', 'TT Symbols', 'TT Symbols 2', 'Noto Sans KR', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
 }
 #app[data-font='broadcast'] .name b,

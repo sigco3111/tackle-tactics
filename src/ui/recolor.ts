@@ -132,3 +132,6 @@ export const recolored = (src: string, skin: number, hair: number): string => {
     if (!pending.has(k)) generate(src, skin, hair, k);
     return src;
 };
+
+/** True once the recoloured variant of `src` is built (or can't be). */
+export const isRecolored = (src: string, skin: number, hair: number) => cache.has(`${src}|${skin}|${hair}`);

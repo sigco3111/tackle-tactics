@@ -92,10 +92,10 @@ export const rollConditions = (rng: Rng, st: Stadium, force: Partial<Conditions>
 };
 
 export const conditionsLabel = (c: Conditions) =>
-    `${{ day: 'Afternoon', dusk: 'Dusk', night: 'Floodlit night' }[c.time]} · ${{ clear: 'clear skies', rain: 'rain', snow: 'snow', fog: 'fog' }[c.weather]}`;
+    `${{ day: '오후', dusk: '해질녘', night: '조명 아래 밤' }[c.time]} · ${{ clear: '맑음', rain: '비', snow: '눈', fog: '안개' }[c.weather]}`;
 
 export const sizeLabel = (s: StadiumSize) =>
-    ({ village: 'Village ground', town: 'Town ground', city: 'City stadium', grand: 'Grand stadium' })[s];
+    ({ village: '마을 구장', town: '소도시 구장', city: '대도시 스타디움', grand: '대형 스타디움' })[s];
 
 // ------------------------------------------------------------------ the manager's own ground
 
@@ -126,5 +126,5 @@ export const customStadium = (look: GroundLook, size: StadiumSize, capacity: num
     wear: 0.2,
 });
 
-export const patternLabel = (p: MowPattern) => ({ stripes: 'Stripes', checker: 'Checker', hoops: 'Hoops', plain: 'Plain' })[p];
-export const conditionLabel = (c: PitchCondition) => ({ lush: 'Lush', dry: 'Dry', muddy: 'Muddy', frost: 'Frosty' })[c];
+export const patternLabel = (p: MowPattern) => ({ stripes: '줄무늬', checker: '체크', hoops: '가로줄', plain: '단색' })[p];
+export const conditionLabel = (c: PitchCondition) => ({ lush: '푸른 잔디', dry: '메마른', muddy: '질척한', frost: '서리 낀' })[c];

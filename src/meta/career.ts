@@ -392,16 +392,16 @@ export const newCareer = (
         tone: 'info',
         text:
             startTier === cfg.career.divisions - 1
-                ? `You take charge of ${user.name}, bottom of the pyramid. Promotion is the goal.`
+                ? `${user.name}의 지휘봉을 잡았습니다. 피라미드의 맨 아래입니다. 목표는 승격입니다.`
                 : startTier === 0
-                  ? `You take charge of ${user.name} in the top flight. Stay up, then aim for the Champions Cup.`
-                  : `You take charge of ${user.name} in the ${leagueName(nation.id, startTier)}. Promotion is the goal.`,
+                  ? `${user.name}의 지휘봉을 잡았습니다. 1부 리그입니다. 먼저 잔류하고, 그다음 챔피언스컵을 노리세요.`
+                  : `${user.name}의 지휘봉을 잡았습니다. ${leagueName(nation.id, startTier)}입니다. 목표는 승격입니다.`,
     });
     saveRng(c, rng);
     return c;
 };
 
-const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`;
+const ordinal = (n: number) => `${n}위`;
 
 // ------------------------------------------------------------------ queries
 
@@ -672,16 +672,16 @@ const finishCupRound = (cfg: GameConfig, c: Career, rng: Rng, round: CupRound) =
     if (cup.champion) {
         const won = cup.champion === c.userClubId;
         const bonus = cup.key === 'intl' ? cfg.career.intlWinnerBonus : cfg.career.cupWinnerBonus;
-        if (won) book(c, `${cup.name} winners`, cfg.career.matchFee[userClub(c).tier]! * bonus);
+        if (won) book(c, `${cup.name} 우승`, cfg.career.matchFee[userClub(c).tier]! * bonus);
         const champ = c.clubs[cup.champion]!;
-        news(c, `${champ.name}${cup.key === 'intl' ? ` (${NATIONS[champ.nation].name})` : ''} win the ${cup.name}!`, won ? 'good' : 'info');
+        news(c, `${champ.name}${cup.key === 'intl' ? ` (${NATIONS[champ.nation].name})` : ''}이(가) ${cup.name}에서 우승했습니다!`, won ? 'good' : 'info');
     }
     const fixture = next && fixtureForClub(next.fixtures, c.userClubId);
     if (fixture) {
         const home = fixture.home === c.userClubId;
         const opponent = c.clubs[home ? fixture.away : fixture.home]!;
-        const from = cup.key === 'intl' ? ` of ${NATIONS[opponent.nation].name}` : '';
-        news(c, `${cup.name} draw · ${next.label}, ${home ? 'home to' : 'away at'} ${opponent.name}${from} on Day ${next.day}.`);
+        const from = cup.key === 'intl' ? ` (${NATIONS[opponent.nation].name})` : '';
+        news(c, `${cup.name} 추첨 · ${next.label}, ${next.day}일차 ${home ? '홈' : '원정'} ${opponent.name}${from}전.`);
     }
 };
 
@@ -721,29 +721,29 @@ export const playMatchday = (cfg: GameConfig, c: Career, report: MatchReport) =>
     const winner = isCupFixture(f) ? cupWinner(f) : gf === ga ? undefined : gf > ga ? u.id : opp.id;
     const won = winner === u.id;
     const penalties = penaltyScore(f, home ? 0 : 1);
-    book(c, `Match fee vs ${opp.short}`, fee);
-    if (home) book(c, `Gate receipts · ${stadiumOf(c, u).name}`, Math.round(fee * cfg.career.ground[stadiumOf(c, u).size].gate));
-    if (won) book(c, 'Win bonus', Math.round(fee * cfg.career.winBonus));
-    else if (!winner) book(c, 'Draw bonus', Math.round(fee * cfg.career.drawBonus));
-    book(c, 'Wages', -wageBill(cfg, u));
+    book(c, `경기 수당 vs ${opp.short}`, fee);
+    if (home) book(c, `입장 수입 · ${stadiumOf(c, u).name}`, Math.round(fee * cfg.career.ground[stadiumOf(c, u).size].gate));
+    if (won) book(c, '승리 보너스', Math.round(fee * cfg.career.winBonus));
+    else if (!winner) book(c, '무승부 보너스', Math.round(fee * cfg.career.drawBonus));
+    book(c, '주급', -wageBill(cfg, u));
     const score = `${gf}–${ga}${penalties ? ` (${penalties})` : ''}`;
     news(
         c,
-        `${t.cup ? `${cupOf(c, t.cup).name} · ${t.cup.label} · ` : ''}${won ? 'Won' : winner ? 'Lost' : 'Drew'} ${score} ${home ? 'at home to' : 'away at'} ${opp.name}.`,
+        `${t.cup ? `${cupOf(c, t.cup).name} · ${t.cup.label} · ` : ''}${won ? '승' : winner ? '패' : '무'} ${score} ${home ? '홈' : '원정'} ${opp.name}전.`,
         won ? 'good' : winner ? 'bad' : 'info',
     );
-    if (t.cup && !won) news(c, `Your ${cupOf(c, t.cup).name} run ends in the ${t.cup.label.toLowerCase()}.`, 'bad');
+    if (t.cup && !won) news(c, `${cupOf(c, t.cup).name} 도전이 ${t.cup.label}에서 끝났습니다.`, 'bad');
 
     // match XP & injuries for the user's XI
     for (const id of report.played) {
         const p = u.squad.find((q) => q.id === id);
         if (!p) continue;
-        if (gainXp(cfg, p, cfg.career.matchXp)) news(c, `${p.name} is ready to level up: choose their class.`, 'good');
+        if (gainXp(cfg, p, cfg.career.matchXp)) news(c, `${p.name} 선수가 레벨업 준비를 마쳤습니다. 포지션을 고르세요.`, 'good');
         for (let k = 0; k < (report.knocks[id] ?? 0); k++) {
             if (rng.chance(cfg.training.knockInjuryChance)) {
                 const days = rng.int(cfg.training.injuryDays[0], cfg.training.injuryDays[1]);
                 p.injury = Math.max(p.injury ?? 0, days);
-                news(c, `${p.name} picked up a knock: out for ${days} days.`, 'bad');
+                news(c, `${p.name} 선수가 부상을 입었습니다. ${days}일 결장.`, 'bad');
                 break;
             }
         }
@@ -790,13 +790,13 @@ export const chooseLevelUp = (cfg: GameConfig, c: Career, playerId: string, cls:
     if (!levelUp(cfg, rng, p, cls)) return null;
     saveRng(c, rng);
     const text = isNew
-        ? `${p.name} takes up a new class: ${cfg.classes[cls].label}!`
-        : `${p.name} reaches ${cfg.classes[cls].short} ${classLevel(p, cls)}.`;
+        ? `${p.name} 선수가 새 포지션 ${cfg.classes[cls].label}을(를) 익혔습니다!`
+        : `${p.name} 선수가 ${cfg.classes[cls].short} ${classLevel(p, cls)}에 도달했습니다.`;
     news(c, text, 'good');
     if (isNew)
         bumpQuest(cfg, c, 'newclass', 1, 'add', (amount, title) => {
-            book(c, `Quest complete: ${title}`, amount);
-            news(c, `Quest complete: ${title}! +${money(amount)}.`, 'good');
+            book(c, `퀘스트 완료: ${title}`, amount);
+            news(c, `퀘스트 완료: ${title}! +${money(amount)}.`, 'good');
         });
     return text;
 };
@@ -844,7 +844,7 @@ export const trainingDay = (cfg: GameConfig, c: Career) => {
                 p.injury = (p.injury ?? 0) - cfg.training.heal;
                 if (p.injury <= 0) {
                     delete p.injury;
-                    if (isUser) announce(`${p.name} is fit again.`, 'good');
+                    if (isUser) announce(`${p.name} 선수가 부상에서 회복했습니다.`, 'good');
                 }
                 continue;
             }
@@ -860,9 +860,9 @@ export const trainingDay = (cfg: GameConfig, c: Career) => {
             xp += amount;
             for (const st of up) {
                 gains++;
-                updates.push(`${p.name} +1 ${DRILLS[st].label}.`);
+                updates.push(`${p.name} ${DRILLS[st].label} +1.`);
             }
-            if (ready) announce(`${p.name} is ready to level up: choose their class.`, 'good');
+            if (ready) announce(`${p.name} 선수가 레벨업 준비를 마쳤습니다. 포지션을 고르세요.`, 'good');
         }
     }
     if (t.cup) {
@@ -873,11 +873,11 @@ export const trainingDay = (cfg: GameConfig, c: Career) => {
     const letter = afterTraining(cfg, c, rng, { trainees });
     if (letter) {
         letter.trainingDay = c.day;
-        updates.unshift(`New letter · ${letter.title}`);
+        updates.unshift(`새 편지 · ${letter.title}`);
     }
     const summary = trainees.length
-        ? `${drillsLabel(c.drills)} · ${trainees.length} trained · ${xp} XP earned${gains ? ` · ${gains} attribute ${gains === 1 ? 'gain' : 'gains'}` : ''}${recovering ? ` · ${recovering} recovering` : ''}.`
-        : 'Recovery day. The squad rested.';
+        ? `${drillsLabel(c.drills)} · ${trainees.length}명 훈련 · 경험치 ${xp} 획득${gains ? ` · 능력치 ${gains}개 상승` : ''}${recovering ? ` · ${recovering}명 회복 중` : ''}.`
+        : '회복일. 선수단이 쉬었습니다.';
     news(c, summary);
     saveRng(c, rng);
     c.day++;
@@ -915,17 +915,17 @@ export const endSeason = (cfg: GameConfig, c: Career): SeasonCeremony => {
     const fee = cfg.career.matchFee[u.tier]!;
     c.history.push({ season: c.season, tier: u.tier, position: pos });
     if (pos === 1) {
-        book(c, 'Season goal: champions', fee * cfg.career.goalTitle);
-        summary.push(`Champions of the ${leagueName(u.nation, u.tier)}!`);
+        book(c, '시즌 목표: 우승', fee * cfg.career.goalTitle);
+        summary.push(`${leagueName(u.nation, u.tier)} 우승!`);
     } else if (pos <= 4) {
-        book(c, 'Season goal: top four', fee * cfg.career.goalTop4);
-        summary.push(`Finished ${ordinal(pos)}: top-four bonus.`);
-    } else summary.push(`Finished ${ordinal(pos)}.`);
-    if (pos <= cfg.career.clubsPerDivision - cfg.career.relegate) book(c, 'Season goal: survival', fee * cfg.career.goalSurvive);
+        book(c, '시즌 목표: 상위 4위', fee * cfg.career.goalTop4);
+        summary.push(`${ordinal(pos)} 마감: 상위 4위 보너스.`);
+    } else summary.push(`${ordinal(pos)} 마감.`);
+    if (pos <= cfg.career.clubsPerDivision - cfg.career.relegate) book(c, '시즌 목표: 잔류', fee * cfg.career.goalSurvive);
 
     // next season's international cup: the top of every top flight, from the final tables
     const qualifiers = intlQualifiers(cfg, c, true);
-    if (qualifiers.includes(u.id)) summary.push(`Qualified for the ${INTL_CUP_NAME}!`);
+    if (qualifiers.includes(u.id)) summary.push(`${INTL_CUP_NAME} 진출!`);
 
     // promotion / relegation between adjacent tiers, inside every nation's pyramid
     for (const pyramid of [c.divisions, ...Object.values(c.world)]) {
@@ -943,8 +943,8 @@ export const endSeason = (cfg: GameConfig, c: Career): SeasonCeremony => {
             if (mv.id === u.id) {
                 summary.push(
                     mv.to < mv.from
-                        ? `PROMOTED to the ${leagueName(u.nation, mv.to)}!`
-                        : `Relegated to the ${leagueName(u.nation, mv.to)}.`,
+                        ? `${leagueName(u.nation, mv.to)}(으)로 승격!`
+                        : `${leagueName(u.nation, mv.to)}(으)로 강등.`,
                 );
                 if (mv.to < mv.from) ceremony.promoted = true;
                 else ceremony.relegated = true;
@@ -959,7 +959,7 @@ export const endSeason = (cfg: GameConfig, c: Career): SeasonCeremony => {
             ageOneSeason(cfg, rng, p);
             if (p.age >= cfg.career.retireFrom && rng.chance(cfg.career.retireChance)) {
                 club.squad = club.squad.filter((q) => q.id !== p.id);
-                if (club.id === u.id) summary.push(`${p.name} retired at ${p.age}.`);
+                if (club.id === u.id) summary.push(`${p.name} 선수가 ${p.age}세에 은퇴했습니다.`);
             }
         }
         // AI clubs refill with youth so squads stay playable; the user gets free trialists only below the minimum
@@ -977,7 +977,7 @@ export const endSeason = (cfg: GameConfig, c: Career): SeasonCeremony => {
                     [17, 19],
                 );
                 club.squad.push(p);
-                summary.push(`Academy trialist ${p.name} (${cfg.classes[p.cls].short}) joins to fill the squad.`);
+                summary.push(`선수단을 채우기 위해 아카데미 테스트 선수 ${p.name}(${cfg.classes[p.cls].short})이(가) 합류합니다.`);
             }
         } else {
             for (const [cls, count] of Object.entries(cfg.career.squadMake) as Array<[ClassId, number]>) {
@@ -1009,8 +1009,8 @@ export const endSeason = (cfg: GameConfig, c: Career): SeasonCeremony => {
     if (c.market.length > cfg.career.market.maxFreeAgents)
         c.market = c.market.sort((a, b) => playerValue(cfg, b) - playerValue(cfg, a)).slice(0, cfg.career.market.maxFreeAgents);
     c.listed = c.listed.filter((l) => c.clubs[l.club]?.squad.some((q) => q.id === l.id));
-    for (const s of summary) news(c, s, s.includes('Relegated') || s.includes('retired') ? 'bad' : 'good');
-    news(c, `Season ${c.season} begins. A new crop of young free agents is on the market.`, 'info');
+    for (const s of summary) news(c, s, s.includes('강등') || s.includes('은퇴') ? 'bad' : 'good');
+    news(c, `${c.season}시즌이 시작됩니다. 새로운 젊은 자유 계약 선수들이 시장에 나왔습니다.`, 'info');
     resetSeason(c, rng);
     saveRng(c, rng);
     return ceremony;
@@ -1118,7 +1118,7 @@ const aiShop = (
     restock(cfg, c, rng, club, fit);
     if (seller) restock(cfg, c, rng, seller, fit);
     tell(
-        `${club.name} sign ${p.name} (${cfg.classes[p.cls].short}) ${seller ? `from ${seller.name}` : 'as a free agent'} for ${money(price)}.`,
+        `${club.name}이(가) ${p.name}(${cfg.classes[p.cls].short}) 선수를 ${seller ? `${seller.name}에서` : '자유 계약으로'} ${money(price)}에 영입했습니다.`,
         seller,
     );
 };
@@ -1221,10 +1221,10 @@ export const salePrice = (cfg: GameConfig, p: Player) => Math.round((playerValue
 export const buy = (cfg: GameConfig, c: Career, playerId: string): string | null => {
     const u = userClub(c);
     const e = marketEntry(c, playerId);
-    if (!e) return 'No longer available.';
-    if (u.squad.length >= cfg.career.squadMax) return `Squad is full (${cfg.career.squadMax}).`;
+    if (!e) return '더 이상 영입할 수 없습니다.';
+    if (u.squad.length >= cfg.career.squadMax) return `선수단이 가득 찼습니다(${cfg.career.squadMax}명).`;
     const price = marketPrice(cfg, e);
-    if (u.budget < price) return 'Not enough money.';
+    if (u.budget < price) return '자금이 부족합니다.';
     const { p, club: seller } = e;
     transfer(c, p, seller, u, price);
     if (seller) {
@@ -1232,30 +1232,30 @@ export const buy = (cfg: GameConfig, c: Career, playerId: string): string | null
         restock(cfg, c, rng, seller, fitTable(cfg));
         saveRng(c, rng);
     }
-    book(c, `Signed ${p.name}`, -price);
-    news(c, `${p.name} signs ${seller ? `from ${seller.name}` : 'as a free agent'} for ${money(price)}.`, 'good');
+    book(c, `${p.name} 영입`, -price);
+    news(c, `${p.name} 선수가 ${seller ? `${seller.name}에서` : '자유 계약으로'} ${money(price)}에 입단했습니다.`, 'good');
     return null;
 };
 
 export const sell = (cfg: GameConfig, c: Career, playerId: string): string | null => {
     const u = userClub(c);
     const p = u.squad.find((q) => q.id === playerId);
-    if (!p) return 'Not in your squad.';
-    if (u.squad.length <= cfg.career.squadMin) return `Squad can't go below ${cfg.career.squadMin}.`;
-    if (p.cls === 'keeper' && u.squad.filter((q) => q.cls === 'keeper').length <= 1) return 'You need at least one keeper.';
+    if (!p) return '내 선수단에 없는 선수입니다.';
+    if (u.squad.length <= cfg.career.squadMin) return `선수단은 ${cfg.career.squadMin}명 아래로 줄일 수 없습니다.`;
+    if (p.cls === 'keeper' && u.squad.filter((q) => q.cls === 'keeper').length <= 1) return '골키퍼가 최소 한 명은 필요합니다.';
     const price = salePrice(cfg, p);
     // a real buyer: any club (any level, any nation) that can pay and would play him
     const rng = careerRng(c);
     const buyer = suitorFor(cfg, c, rng, p, price, [0, cfg.career.divisions - 1]);
     saveRng(c, rng);
-    if (!buyer) return `No club wants ${p.name} at ${money(price)} right now. Try again after a few days.`;
+    if (!buyer) return `지금은 ${money(price)}에 ${p.name} 선수를 원하는 클럽이 없습니다. 며칠 뒤에 다시 시도하세요.`;
     transfer(c, p, u, buyer, price);
     buyer.lineup = autoLineup(cfg, buyer);
     validLineup(cfg, u);
-    book(c, `Sold ${p.name}`, price);
+    book(c, `${p.name} 판매`, price);
     news(
         c,
-        `${p.name} joins ${buyer.name}${buyer.nation !== c.nation ? ` (${NATIONS[buyer.nation].name})` : ''} for ${money(price)}.`,
+        `${p.name} 선수가 ${money(price)}에 ${buyer.name}${buyer.nation !== c.nation ? ` (${NATIONS[buyer.nation].name})` : ''}(으)로 이적했습니다.`,
         'info',
     );
     return null;
@@ -1285,10 +1285,10 @@ export const restoreCareer = (raw: string): string | null => {
     try {
         c = JSON.parse(raw) as Partial<Career>;
     } catch {
-        return "That file isn't a Tackle Tactics backup.";
+        return 'Tackle Tactics 백업 파일이 아닙니다.';
     }
-    if (!c || typeof c !== 'object' || !c.clubs || !c.userClubId) return "That file isn't a Tackle Tactics backup.";
-    if (c.version !== SAVE_VERSION) return 'That backup is from an older version of the game and can no longer be loaded.';
+    if (!c || typeof c !== 'object' || !c.clubs || !c.userClubId) return 'Tackle Tactics 백업 파일이 아닙니다.';
+    if (c.version !== SAVE_VERSION) return '이 백업은 이전 버전의 게임에서 만든 것이라 더 이상 불러올 수 없습니다.';
     writeSave(raw);
     return null;
 };
@@ -1330,22 +1330,22 @@ export const groundUpgrade = (cfg: GameConfig, c: Career) => {
     if (!next) return null;
     const rule = cfg.career.ground[next];
     const blocked = !groundAllowed(cfg, next, u.tier)
-        ? `Reach the ${leagueName(u.nation, rule.minTier)} first`
+        ? `먼저 ${leagueName(u.nation, rule.minTier)}에 도달해야 합니다`
         : u.budget < rule.cost
-          ? `Needs ${money(rule.cost)}`
+          ? `${money(rule.cost)} 필요`
           : null;
     return { size: next, cost: rule.cost, capacity: rule.capacity, blocked };
 };
 /** Build the next size up: pays for it, raises the capacity (and the gate receipts). */
 export const expandGround = (cfg: GameConfig, c: Career): string | null => {
     const up = groundUpgrade(cfg, c);
-    if (!up) return 'Your ground is as big as they come.';
+    if (!up) return '경기장이 더 이상 커질 수 없는 규모입니다.';
     if (up.blocked) return up.blocked;
     const u = userClub(c);
     const st = stadiumOf(c, u);
-    book(c, `Ground expansion: ${sizeLabel(up.size).toLowerCase()}`, -up.cost);
+    book(c, `경기장 확장: ${sizeLabel(up.size).toLowerCase()}`, -up.cost);
     u.stadium = { ...st, size: up.size, capacity: up.capacity };
-    news(c, `${st.name} is now a ${sizeLabel(up.size).toLowerCase()}: ${up.capacity.toLocaleString('en')} seats.`, 'good');
+    news(c, `${st.name}이(가) ${sizeLabel(up.size).toLowerCase()} 규모가 되었습니다: ${up.capacity.toLocaleString('en')}석.`, 'good');
     return null;
 };
 /** Change how the ground looks (name, mowing, pitch, flags): free, any time. */

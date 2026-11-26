@@ -1,5 +1,8 @@
 import { mount } from '@grainular/nord';
 import './ui/fonts.css';
+import '@fontsource/noto-sans-kr/400.css';
+import '@fontsource/noto-sans-kr/500.css';
+import '@fontsource/noto-sans-kr/700.css';
 import './ui/frames.css';
 import './styles.css';
 import { initStorage } from './meta/storage';

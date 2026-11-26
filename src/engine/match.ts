@@ -154,50 +154,50 @@ export class Match {
     blockReason = (p: Piece, id: AbilityId): string | null => {
         const cfg = this.cfg;
         const def = abilityDef(cfg, id);
-        if (!hasAbility(cfg, p.player, id)) return `Locked: needs ${cfg.classes[def.cls].short} level ${def.unlock}`;
+        if (!hasAbility(cfg, p.player, id)) return `잠김: ${cfg.classes[def.cls].short} 레벨 ${def.unlock} 필요`;
         const left = (p.cooldowns[id] ?? 0) - this.state.round;
-        if (left > 0) return `Recharging: ${left} round${left > 1 ? 's' : ''}`;
+        if (left > 0) return `재충전 중: ${left}라운드`;
         const phase = this.state.phase;
         const holds = this.carrier()?.id === p.id;
-        if ((def.phase === 'move' || def.phase === 'pre') && phase !== 'move') return 'Only before moving';
-        if (def.phase === 'act' && phase !== 'act') return 'Only after moving';
+        if ((def.phase === 'move' || def.phase === 'pre') && phase !== 'move') return '이동 전에만 가능';
+        if (def.phase === 'act' && phase !== 'act') return '이동 후에만 가능';
         switch (id) {
             case 'sprint':
-                return p.status.fouled ? 'You were fouled: no moving this turn' : null;
+                return p.status.fouled ? '파울을 당해 이번 턴에는 이동할 수 없습니다' : null;
             case 'run':
             case 'press':
             case 'rush':
-                return holds ? 'Only without the ball' : null;
+                return holds ? '공이 없을 때만 가능' : null;
             case 'trick':
-                if (!holds) return 'Needs the ball';
-                if (p.status.tricked) return 'Already used this turn';
+                if (!holds) return '공이 필요합니다';
+                if (p.status.tricked) return '이번 턴에 이미 사용했습니다';
                 return this.opponents(p.team).some((o) => this.canReact(o) && cheb(o.pos, p.pos) === 1)
                     ? null
-                    : 'No defender next to you with a reaction';
+                    : '반응 행동이 남은 인접 수비수가 없습니다';
             case 'placed':
             case 'power':
             case 'chip':
-                if (!holds) return 'Needs the ball';
-                return this.shotBlocked(p) ? 'Extra turn: no shooting' : null;
+                if (!holds) return '공이 필요합니다';
+                return this.shotBlocked(p) ? '추가 턴: 슛 불가' : null;
             case 'through':
-                return holds ? null : 'Needs the ball';
+                return holds ? null : '공이 필요합니다';
             case 'cross':
-                if (!holds) return 'Needs the ball';
-                return this.crossZone(p) ? null : 'Get wide in the final third first';
+                if (!holds) return '공이 필요합니다';
+                return this.crossZone(p) ? null : '먼저 공격 지역 측면으로 나가세요';
             case 'tempo':
-                return this.tempoTargets(p).length ? null : 'No teammate left to act this round';
+                return this.tempoTargets(p).length ? null : '이번 라운드에 행동할 동료가 남아 있지 않습니다';
             case 'slide': {
                 const c = this.carrier();
                 if (!c || c.team === p.team) return "Opponents don't have the ball";
-                if (c.status.fouled) return 'Carrier has a free kick';
-                return cheb(c.pos, p.pos) <= cfg.abilities.slide.reach ? null : `Carrier must be within ${cfg.abilities.slide.reach} cells`;
+                if (c.status.fouled) return '공 소유자가 프리킥을 얻었습니다';
+                return cheb(c.pos, p.pos) <= cfg.abilities.slide.reach ? null : `공 소유자가 ${cfg.abilities.slide.reach}칸 이내에 있어야 합니다`;
             }
             case 'foul':
-                return this.canTackle(p) ? null : 'Must be next to the opposing carrier';
+                return this.canTackle(p) ? null : '상대 공 소유자 바로 옆이어야 합니다';
             case 'mark':
-                return this.markTargets(p).length ? null : `No opponent within ${cfg.abilities.mark.range} cells`;
+                return this.markTargets(p).length ? null : `${cfg.abilities.mark.range}칸 이내에 상대가 없습니다`;
             case 'command':
-                return this.mates(p).some((q) => cheb(q.pos, p.pos) <= cfg.abilities.command.radius) ? null : 'No teammate within range';
+                return this.mates(p).some((q) => cheb(q.pos, p.pos) <= cfg.abilities.command.radius) ? null : '범위 안에 동료가 없습니다';
         }
         return null;
     };
@@ -753,16 +753,16 @@ export class Match {
     subBlock = (team: TeamSide, offId: string, onId: string, timing = true): string | null => {
         const off = this.state.pieces.find((q) => q.id === offId);
         const on = this.bench(team).find((p) => p.id === onId);
-        if (this.state.over) return 'The match is over';
-        if (this.subsLeft(team) <= 0) return 'No substitutions left';
-        if (!off || off.team !== team) return 'Pick one of your players on the pitch';
-        if (!on) return 'Pick a player from the bench';
+        if (this.state.over) return '경기가 끝났습니다';
+        if (this.subsLeft(team) <= 0) return '남은 교체가 없습니다';
+        if (!off || off.team !== team) return '그라운드 위의 우리 선수를 고르세요';
+        if (!on) return '벤치에서 선수를 고르세요';
         if ((off.player.cls === 'keeper') !== (on.cls === 'keeper'))
-            return off.player.cls === 'keeper' ? 'A keeper can only be replaced by a keeper' : 'Keepers only replace keepers';
+            return off.player.cls === 'keeper' ? '골키퍼는 골키퍼로만 교체할 수 있습니다' : '골키퍼 교체 선수는 골키퍼만 가능합니다';
         if (!timing) return null;
-        if (off.id === this.turnPieceId && this.state.phase !== 'done') return 'Not the player whose turn it is';
-        if (this.carrier()?.id === off.id) return 'Not while they have the ball';
-        if (this.state.setPiece) return 'Not during a set piece';
+        if (off.id === this.turnPieceId && this.state.phase !== 'done') return '지금 차례인 선수는 교체할 수 없습니다';
+        if (this.carrier()?.id === off.id) return '공을 가진 선수는 교체할 수 없습니다';
+        if (this.state.setPiece) return '세트피스 중에는 교체할 수 없습니다';
         return null;
     };
 

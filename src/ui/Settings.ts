@@ -47,10 +47,10 @@ const matchOptions = (get: () => MatchOpts, set: (o: MatchOpts) => void) => {
         options.set(next);
     };
     return html`<div class="set-rows">
-        <div class="set-row"><span>Action timer<small>Seconds per action before you lose it. Off = no clock at all.</small></span>${seg(
+        <div class="set-row"><span>행동 제한 시간<small>행동을 잃기 전까지의 초 단위 시간. 꺼짐 = 시간 제한 없음.</small></span>${seg(
             derived(options, (o) => o.timerSeconds),
             [
-                [0, 'Off'],
+                [0, '꺼짐'],
                 [8, '8s'],
                 [10, '10s'],
                 [15, '15s'],
@@ -60,7 +60,7 @@ const matchOptions = (get: () => MatchOpts, set: (o: MatchOpts) => void) => {
             ] as Array<[number, string]>,
             (v) => put('timerSeconds', v),
         )}</div>
-        <label class="set-row"><span>Match length<small>Rounds per match (everyone acts once per round)</small></span>${slider(
+        <label class="set-row"><span>경기 길이<small>경기당 라운드 수 (라운드마다 모두 한 번씩 행동)</small></span>${slider(
             derived(options, (o) => o.rounds),
             6,
             40,
@@ -68,20 +68,20 @@ const matchOptions = (get: () => MatchOpts, set: (o: MatchOpts) => void) => {
             '',
             (v) => put('rounds', v),
         )}</label>
-        <div class="set-row"><span>AI difficulty</span>${seg(
+        <div class="set-row"><span>AI 난이도</span>${seg(
             derived(options, (o) => o.difficulty),
             [
-                ['easy', 'Easy'],
-                ['normal', 'Normal'],
-                ['hard', 'Hard'],
+                ['easy', '쉬움'],
+                ['normal', '보통'],
+                ['hard', '어려움'],
             ],
             (v) => put('difficulty', v),
         )}</div>
-        <div class="set-row"><span>On timeout</span>${seg(
+        <div class="set-row"><span>시간 초과 시</span>${seg(
             derived(options, (o) => o.timeoutPolicy),
             [
-                ['lose', 'Lose action'],
-                ['auto', 'AI plays it'],
+                ['lose', '행동 상실'],
+                ['auto', 'AI가 대신 수행'],
             ],
             (v) => put('timeoutPolicy', v),
         )}</div>
@@ -92,32 +92,32 @@ const matchOptions = (get: () => MatchOpts, set: (o: MatchOpts) => void) => {
 const YourSongs = () => {
     const note = grain('');
     const count = derived(myTracks, (list) =>
-        list.length ? `${String(list.length)} song${list.length === 1 ? '' : 's'} of yours on the station` : 'none yet',
+        list.length ? `${String(list.length)}곡이 방송국에 등록되어 있습니다` : '아직 없음',
     );
     if (isDesktop)
-        return html`<div class="set-row your-songs"><span>Your songs<small>Put audio files in this folder and they join the station (named "Artist - Title" for the credits). <code>${musicFolder}</code></small></span>
+        return html`<div class="set-row your-songs"><span>내 노래<small>이 폴더에 오디오 파일을 넣으면 라디오에 추가됩니다 (크레딧 표시를 위해 "가수 - 제목" 형식 권장). <code>${musicFolder}</code></small></span>
             <div class="set-reset">
                 <div class="your-songs-buttons">
-                    <button class="ghost" ${on('click', () => void openMusicFolder().catch((e: unknown) => note.set(String(e))))}>Open music folder</button>
+                    <button class="ghost" ${on('click', () => void openMusicFolder().catch((e: unknown) => note.set(String(e))))}>음악 폴더 열기</button>
                     <button class="ghost" ${on('click', async () => {
                         await rescan();
-                        note.set('Folder read again.');
-                    })}>Rescan</button>
+                        note.set('폴더를 다시 읽었습니다.');
+                    })}>다시 검색</button>
                 </div>
                 <small role="status">${derived(combined([count, note]), ([n, msg]) => msg || n)}</small>
             </div></div>`;
-    return html`<div class="set-row your-songs"><span>Your songs<small>Add audio files from your computer (MP3 or M4A play everywhere). They stay in this browser only.</small></span>
+    return html`<div class="set-row your-songs"><span>내 노래<small>컴퓨터의 오디오 파일을 추가하세요 (MP3, M4A는 어디서나 재생됩니다). 이 브라우저에만 저장됩니다.</small></span>
         <div class="set-reset">
-            <label class="button ghost file-pick">Add songs…<input type="file" multiple accept="audio/*,${SONG_EXTS.map((e) => `.${e}`).join(',')}" hidden ${on(
+            <label class="button ghost file-pick">노래 추가…<input type="file" multiple accept="audio/*,${SONG_EXTS.map((e) => `.${e}`).join(',')}" hidden ${on(
                 'change',
                 async (e) => {
                     const input = e.target as HTMLInputElement;
                     const files = [...(input.files ?? [])];
                     input.value = '';
                     if (!files.length) return;
-                    note.set('Adding…');
+                    note.set('추가하는 중…');
                     const skipped = await addSongs(files);
-                    note.set(skipped.length ? `Not audio: ${skipped.join(', ')}` : '');
+                    note.set(skipped.length ? `오디오 파일이 아님: ${skipped.join(', ')}` : '');
                 },
             )} /></label>
             <small role="status">${derived(combined([count, note]), ([n, msg]) => msg || n)}</small>
@@ -127,12 +127,12 @@ const YourSongs = () => {
 /** Every song on the station with an on/off switch; clicking a title plays it now. */
 const SongList = () => {
     const tracks = allTracks();
-    if (!tracks.length) return html`<p class="muted">No songs yet: add some of your own above.</p>`;
+    if (!tracks.length) return html`<p class="muted">아직 노래가 없습니다. 위에서 직접 추가해 보세요.</p>`;
     const disabled = derived(prefs, (p) => p.radioDisabled);
     const onCount = derived(disabled, (off) => String(tracks.filter((t) => !off.includes(trackKey(t))).length));
     return html`<div class="songs">
-        <div class="songs-head"><span>Songs <small>${onCount} of ${String(tracks.length)} on · click a title to play it</small></span>
-            <button class="ghost" ${on('click', () => setPref('radioDisabled', []))}>All on</button></div>
+        <div class="songs-head"><span>노래 <small>${String(tracks.length)}곡 중 ${onCount}곡 켜짐 · 제목을 누르면 재생</small></span>
+            <button class="ghost" ${on('click', () => setPref('radioDisabled', []))}>모두 켜기</button></div>
         <ul>${tracks.map((t) => {
             const k = trackKey(t);
             const enabled = derived(disabled, (off) => !off.includes(k));
@@ -145,13 +145,13 @@ const SongList = () => {
                 radio.checkCurrent();
             };
             return html`<li ${attr({ class: cls })}>
-                <button class="song-play" title="Play now" ${on('click', () => radio.playNow(t))}><i>${derived(now, (playing) => (playing ? '♫' : '▶'))}</i><b>${t.title}</b><span>${t.artist ?? (t.mine ? 'Your song' : STATION)}</span></button>
-                ${t.mine && !isDesktop ? html`<button class="ghost song-remove" title="Remove from this browser" ${on('click', () => void removeSong(t))}>Remove</button>` : html``}
+                <button class="song-play" title="지금 재생" ${on('click', () => radio.playNow(t))}><i>${derived(now, (playing) => (playing ? '♫' : '▶'))}</i><b>${t.title}</b><span>${t.artist ?? (t.mine ? '내 노래' : STATION)}</span></button>
+                ${t.mine && !isDesktop ? html`<button class="ghost song-remove" title="이 브라우저에서 삭제" ${on('click', () => void removeSong(t))}>삭제</button>` : html``}
                 ${seg(
                     derived(enabled, (value) => (value ? 'on' : 'off')),
                     [
-                        ['on', 'On'],
-                        ['off', 'Off'],
+                        ['on', '켜짐'],
+                        ['off', '꺼짐'],
                     ],
                     toggle,
                 )}
@@ -164,7 +164,8 @@ export const SettingsModal = (props: SettingsProps) => {
     const savePath = grain('…');
     void saveLocation()
         .then((p) => savePath.set(p))
-        .catch(() => savePath.set('Unknown'));
+        .catch(() => savePath.set('알 수 없음'));
+    const TAB_KO: Record<string, string> = { display: '화면', sound: '사운드', gameplay: '게임플레이', career: '커리어', about: '정보' };
     type Tab = 'display' | 'sound' | 'gameplay' | 'career' | 'about';
     const tab = grain<Tab>('display');
     const pref = <K extends keyof ReturnType<typeof prefs>>(key: K) => distinct(derived(prefs, (p) => p[key]));
@@ -175,53 +176,53 @@ export const SettingsModal = (props: SettingsProps) => {
         derived(pref(key), (value) => (value ? 'on' : 'off'));
     const Display = () => {
         return html`<div class="set-rows">
-                <div class="set-row"><span>UI scale<small>Bigger UI shows less around it. Applies instantly.</small></span>
+                <div class="set-row"><span>UI 크기<small>UI가 커지면 주변이 덜 보입니다. 즉시 적용됩니다.</small></span>
                     ${seg(
                         pref('uiScale'),
                         UI_SCALES.map((s) => [s, `${Math.round(s * 100)}%`] as [number, string]),
                         (v) => setPref('uiScale', v),
                     )}</div>
-                <div class="set-row"><span>Scaling<small>Sharp draws the game at your screen's full resolution (best on big screens); Smooth scales one finished picture. Auto picks Sharp on Linux.</small></span>
+                <div class="set-row"><span>크기 조절 방식<small>선명은 화면의 전체 해상도로 게임을 그립니다(큰 화면에 적합). 부드럽게는 완성된 한 장의 화면을 늘립니다. 자동은 Linux에서 선명을 고릅니다.</small></span>
                     ${seg(
                         pref('scaling'),
                         [
-                            ['auto', 'Auto'],
-                            ['sharp', 'Sharp'],
-                            ['smooth', 'Smooth'],
+                            ['auto', '자동'],
+                            ['sharp', '선명'],
+                            ['smooth', '부드럽게'],
                         ],
                         (v) => setPref('scaling', v),
                     )}</div>
-                <div class="set-row"><span>Fullscreen<small>F11 or ${isDesktop && navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl'}+Enter toggles it anywhere.</small></span>
+                <div class="set-row"><span>전체 화면<small>F11 또는 ${isDesktop && navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl'}+Enter로 어디서든 전환합니다.</small></span>
                     ${seg(
                         derived(fullscreen, (f) => (f ? 'on' : 'off')),
                         [
-                            ['off', 'Window'],
-                            ['on', 'Fullscreen'],
+                            ['off', '창 모드'],
+                            ['on', '전체 화면'],
                         ],
                         (v) => void setFullscreen(v === 'on'),
                     )}</div>
-                <div class="set-row top"><span>Font<small>The players and the pitch stay pixel art in every style.</small></span>
+                <div class="set-row top"><span>글꼴<small>선수와 그라운드는 어떤 스타일에서도 픽셀 아트로 유지됩니다.</small></span>
                     <div class="font-list">${FONTS.map(
                         (
                             f,
                         ) => html`<button ${attr({ class: derived(pref('font'), (font) => `font-opt ${font === f.id ? 'on' : ''}`) })} data-font="${f.id}" ${on('click', () => setPref('font', f.id))}>
-                        <b>${f.label}</b><span class="sample">National League · 128k${COIN} · Run in behind</span><small>${f.note}</small></button>`,
+                        <b>${f.label}</b><span class="sample">내셔널 리그 · 128k${COIN} · 뒷공간 침투 · 가나다</span><small>${f.note}</small></button>`,
                     )}</div></div>
-                <div class="set-row"><span>Auto zoom<small>The camera leans in when players crowd the ball. Wheel or +/− zoom by hand, 0 resets.</small></span>
+                <div class="set-row"><span>자동 줌<small>선수들이 공 주변에 몰리면 카메라가 확대됩니다. 휠 또는 +/−로 직접 줌, 0으로 초기화.</small></span>
                     ${seg(
                         toggle('autoZoom'),
                         [
-                            ['on', 'On'],
-                            ['off', 'Off'],
+                            ['on', '켜짐'],
+                            ['off', '꺼짐'],
                         ],
                         (v) => setPref('autoZoom', v === 'on'),
                     )}</div>
-                <div class="set-row"><span>Reduce motion<small>Stops blinking and pulsing UI elements.</small></span>
+                <div class="set-row"><span>동작 줄이기<small>깜빡이고 맥동하는 UI 요소를 멈춥니다.</small></span>
                     ${seg(
                         toggle('reduceMotion'),
                         [
-                            ['off', 'Off'],
-                            ['on', 'On'],
+                            ['off', '꺼짐'],
+                            ['on', '켜짐'],
                         ],
                         (v) => setPref('reduceMotion', v === 'on'),
                     )}</div>
@@ -245,26 +246,26 @@ export const SettingsModal = (props: SettingsProps) => {
                     },
                 )}</label>`;
         return html`<div class="set-rows">
-                <div class="set-row"><span>Sound<small>M toggles it during a match.</small></span>${seg(
+                <div class="set-row"><span>사운드<small>경기 중 M으로 전환합니다.</small></span>${seg(
                     derived(pref('muted'), (muted) => (muted ? 'off' : 'on')),
                     [
-                        ['on', 'On'],
-                        ['off', 'Muted'],
+                        ['on', '켜짐'],
+                        ['off', '음소거'],
                     ],
                     (v) => setPref('muted', v === 'off'),
                 )}</div>
-                ${vol('sfxVolume', 'Effects', 'Kicks, tackles, whistles, UI.')}
-                ${vol('crowdVolume', 'Crowd', 'The ambience that swells as the ball nears goal.')}
-                <h4>Radio <small>the station's songs and yours · N next song · R on/off</small></h4>
-                <div class="set-row"><span>Radio</span>${seg(
+                ${vol('sfxVolume', '효과음', '킥, 태클, 휘슬, UI.')}
+                ${vol('crowdVolume', '관중', '공이 골문에 가까워질수록 커지는 환호 소리.')}
+                <h4>라디오 <small>방송국 노래와 내 노래 · N 다음 곡 · R 켜기/끄기</small></h4>
+                <div class="set-row"><span>라디오</span>${seg(
                     toggle('radioOn'),
                     [
-                        ['on', 'On'],
-                        ['off', 'Off'],
+                        ['on', '켜짐'],
+                        ['off', '꺼짐'],
                     ],
                     (v) => radio.setOn(v === 'on'),
                 )}</div>
-                <label class="set-row"><span>Radio volume</span>${slider(
+                <label class="set-row"><span>라디오 볼륨</span>${slider(
                     derived(pref('radioVolume'), (value) => Math.round(value * 100)),
                     0,
                     100,
@@ -272,12 +273,12 @@ export const SettingsModal = (props: SettingsProps) => {
                     '%',
                     (v) => setPref('radioVolume', v / 100),
                 )}</label>
-                <div class="set-row"><span>During matches<small>Quieter keeps it under the crowd and the commentary.</small></span>${seg(
+                <div class="set-row"><span>경기 중<small>작게 설정하면 관중과 해설 소리 아래로 낮춥니다.</small></span>${seg(
                     pref('radioInMatch'),
                     [
-                        ['on', 'Full'],
-                        ['quiet', 'Quieter'],
-                        ['off', 'Off'],
+                        ['on', '기본'],
+                        ['quiet', '작게'],
+                        ['off', '꺼짐'],
                     ] as Array<['on' | 'quiet' | 'off', string]>,
                     (v) => setPref('radioInMatch', v),
                 )}</div>
@@ -287,57 +288,57 @@ export const SettingsModal = (props: SettingsProps) => {
     };
     const Gameplay = () => {
         return html`<div>
-                <div class="set-rows"><div class="set-row"><span>Match intro<small>Both squads on the pitch, the commentators and the ground before kick-off. Enter or Esc kicks off.</small></span>
+                <div class="set-rows"><div class="set-row"><span>경기 인트로<small>킥오프 전 양 팀 선수, 해설진, 경기장 소개. Enter 또는 Esc로 바로 킥오프.</small></span>
                     ${seg(
                         toggle('matchIntro'),
                         [
-                            ['on', 'Show'],
-                            ['off', 'Skip'],
+                            ['on', '표시'],
+                            ['off', '건너뛰기'],
                         ],
                         (v) => setPref('matchIntro', v === 'on'),
                     )}</div>
-                <div class="set-row"><span>AI speed<small>How quickly AI players act and results resolve.</small></span>
+                <div class="set-row"><span>AI 속도<small>AI 선수가 행동하고 결과가 처리되는 속도.</small></span>
                     ${seg(
                         pref('aiSpeed'),
                         [
-                            ['fast', 'Fast'],
-                            ['normal', 'Normal'],
-                            ['slow', 'Slow'],
+                            ['fast', '빠름'],
+                            ['normal', '보통'],
+                            ['slow', '느림'],
                         ] as Array<[AiSpeed, string]>,
                         (v) => setPref('aiSpeed', v),
                     )}</div>
-                <div class="set-row top"><span>Focus<small>Which of your players ask for orders. F cycles it in a match.</small></span>
+                <div class="set-row top"><span>지시 대상<small>명령을 내릴 선수 범위. 경기 중 F로 전환합니다.</small></span>
                     <div class="font-list">${CONTROL_MODES.map((m) => html`<button ${attr({ class: derived(pref('controlMode'), (mode) => `font-opt ${mode === m.id ? 'on' : ''}`) })} ${on('click', () => setPref('controlMode', m.id))}><b>${m.label}</b><small>${m.note}</small></button>`)}</div></div>
-                <div class="set-row"><span>Coach tips<small>One-time hints the first time something happens.</small></span>
+                <div class="set-row"><span>코치 팁<small>어떤 일이 처음 일어날 때 한 번 나오는 힌트.</small></span>
                     <div class="seg">${seg(
                         toggle('tips'),
                         [
-                            ['on', 'On'],
-                            ['off', 'Off'],
+                            ['on', '켜짐'],
+                            ['off', '꺼짐'],
                         ],
                         (v) => setPref('tips', v === 'on'),
                     )}</div></div>
-                <div class="set-row"><span>Tutorial messages<small>Show every coach tip again, in matches and in the career hub.</small></span>
+                <div class="set-row"><span>튜토리얼 메시지<small>경기와 커리어 허브의 모든 코치 팁을 다시 표시합니다.</small></span>
                     <div class="set-reset">
                         <button class="ghost" ${attr({ disabled: derived(seenTips, (n) => n === 0) })} ${on('click', () => {
                             const n = seenTips();
                             setPref('tipsSeen', []);
                             setPref('tips', true);
-                            tipsReset.set(`${n} tip${n === 1 ? '' : 's'} will show again.`);
-                        })}>Reset tutorial messages</button>
-                        <small role="status">${derived(combined([seenTips, tipsReset]), ([n, done]) => done || (n ? `${n} seen so far` : 'None seen yet'))}</small>
+                            tipsReset.set(`팁 ${n}개가 다시 표시됩니다.`);
+                        })}>튜토리얼 메시지 초기화</button>
+                        <small role="status">${derived(combined([seenTips, tipsReset]), ([n, done]) => done || (n ? `지금까지 ${n}개 확인` : '아직 본 팁 없음'))}</small>
                     </div></div>
                 </div>
-                <h4>Match defaults <small>quick matches & new careers</small></h4>
+                <h4>경기 기본값 <small>빠른 경기 및 새 커리어</small></h4>
                 ${matchOptions(props.defaults.get, props.defaults.set)}
                 ${isDesktop ? html`` : Backup()}
             </div>`;
     };
     /** Browser saves live in this browser only: a file backup to keep, and the way back. */
     const backupNote = grain('');
-    const Backup = () => html`<h4>Career backup <small>the save lives in this browser only</small></h4>
+    const Backup = () => html`<h4>커리어 백업 <small>저장 데이터는 이 브라우저에만 있습니다</small></h4>
         <div class="set-rows">
-            <div class="set-row"><span>Export<small>Download the career as a file. Keep one in case the browser's data gets cleared.</small></span>
+            <div class="set-row"><span>내보내기<small>커리어를 파일로 내려받습니다. 브라우저 데이터가 지워질 때를 대비해 하나 보관하세요.</small></span>
                 <div class="set-reset"><button class="ghost" ${attr({ disabled: !careerBackup() })} ${on('click', () => {
                     const raw = careerBackup();
                     if (!raw) return;
@@ -346,10 +347,10 @@ export const SettingsModal = (props: SettingsProps) => {
                     a.download = `tackle-tactics-${(props.career?.name ?? 'career').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${new Date().toISOString().slice(0, 10)}.json`;
                     a.click();
                     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-                })}>Export backup</button></div></div>
-            <div class="set-row"><span>Import<small>Load a backup file. It replaces the career in this browser.</small></span>
+                })}>백업 내보내기</button></div></div>
+            <div class="set-row"><span>가져오기<small>백업 파일을 불러옵니다. 이 브라우저의 커리어를 대체합니다.</small></span>
                 <div class="set-reset">
-                    <label class="button ghost file-pick">Import backup<input type="file" accept=".json,application/json" hidden ${on(
+                    <label class="button ghost file-pick">백업 가져오기<input type="file" accept=".json,application/json" hidden ${on(
                         'change',
                         async (e) => {
                             const input = e.target as HTMLInputElement;
@@ -359,15 +360,15 @@ export const SettingsModal = (props: SettingsProps) => {
                             if (
                                 careerBackup() &&
                                 !(await props.confirm({
-                                    title: 'Replace this career?',
-                                    body: 'The career in this browser will be replaced by the backup.',
-                                    action: 'Import backup',
+                                    title: '이 커리어를 교체할까요?',
+                                    body: '이 브라우저의 커리어가 백업으로 교체됩니다.',
+                                    action: '백업 가져오기',
                                 }))
                             )
                                 return;
                             const why = restoreCareer(await file.text());
                             if (why) return backupNote.set(why);
-                            backupNote.set('Loaded. Restarting…');
+                            backupNote.set('불러왔습니다. 다시 시작합니다…');
                             await whenSaved();
                             location.reload();
                         },
@@ -377,9 +378,9 @@ export const SettingsModal = (props: SettingsProps) => {
         </div>`;
     const Career = () => {
         const c = props.career;
-        if (!c) return html`<p class="muted">No career loaded.</p>`;
+        if (!c) return html`<p class="muted">불러온 커리어가 없습니다.</p>`;
         return html`<div>
-            <h4>${c.name} <small>applies from the next match</small></h4>
+            <h4>${c.name} <small>다음 경기부터 적용</small></h4>
             ${matchOptions(
                 () => c.settings,
                 (o) => {
@@ -387,21 +388,21 @@ export const SettingsModal = (props: SettingsProps) => {
                     c.save();
                 },
             )}
-            <h4>Save file <small>saved automatically after every change</small></h4>
+            <h4>저장 파일 <small>변경할 때마다 자동 저장</small></h4>
             <p class="save-path">${savePath}</p>
             ${
                 props.onDeleteCareer
-                    ? html`<div class="danger-zone"><span>Delete this career save. This can't be undone.</span>
+                    ? html`<div class="danger-zone"><span>이 커리어 저장 데이터를 삭제합니다. 되돌릴 수 없습니다.</span>
                 <button class="warn" ${on('click', async () => {
                     if (
                         await props.confirm({
-                            title: 'Delete this career?',
-                            body: `“${c.name}” will be removed from the active save slot.`,
-                            action: 'Delete career',
+                            title: '이 커리어를 삭제할까요?',
+                            body: `“${c.name}” 은(는) 현재 저장 슬롯에서 삭제됩니다.`,
+                            action: '커리어 삭제',
                         })
                     )
                         props.onDeleteCareer!();
-                })}>Delete career</button></div>`
+                })}>커리어 삭제</button></div>`
                     : html``
             }
         </div>`;
@@ -411,23 +412,22 @@ export const SettingsModal = (props: SettingsProps) => {
     /** THIRD-PARTY-NOTICES.txt (made by the build, scripts/notices.mjs), loaded when asked for. */
     const notices = grain('');
     const About = () => html`<div class="about">
-        <h4>A vibe-coded game</h4>
-        <p>Tackle Tactics is a hobby project, built by directing AI coding assistants (Claude Opus 5.5 and GPT 6.2 Sol) rather than writing every
-        line by hand. The design, the decisions and the playtesting are human; much of the code is not. Expect rough edges,
-        odd balance and the occasional bug, and please report what you find.</p>
-        <h4>Credits</h4>
+        <h4>바이브 코딩으로 만든 게임</h4>
+        <p>Tackle Tactics는 모든 코드를 직접 쓰지 않고 AI 코딩 도우미(Claude Opus 5.5, GPT 6.2 Sol)에게 지시해 만든 취미 프로젝트입니다.
+        설계, 결정, 플레이 테스트는 사람이 했지만 코드의 상당 부분은 그렇지 않습니다. 거친 부분, 어색한 밸런스, 간혹 버그가 있을 수 있으니 발견하면 알려 주세요.</p>
+        <h4>크레딧</h4>
         <dl class="credits-list">
-            <dt>Design & direction</dt><dd>Sebastian Heinz</dd>
-            <dt>Code</dt><dd>Written with Claude Opus 5.5 (Claude Code) and GPT 6.2 Sol</dd>
-            <dt>Players, pitch & stadium art</dt><dd><i>Soccer Match – Top Down Football Tileset & Players</i> by ${link('https://bubbabba.itch.io', 'bubbabba')}</dd>
-            <dt>Radio</dt><dd>Songs made with ${link('https://suno.com', 'Suno')}</dd>
-            <dt>Fonts</dt><dd>Barlow Condensed, Inter, Silkscreen, Pixelify Sans, VT323, Noto Sans Symbols (SIL Open Font License, via ${link('https://fontsource.org', 'Fontsource')})</dd>
-            <dt>Source</dt><dd>${link('https://github.com/IamSebastianDev/tackle-tactics', 'github.com/IamSebastianDev/tackle-tactics')}</dd>
-            <dt>Built with</dt><dd>${link('https://www.npmjs.com/package/@grainular/nord', 'Nørd & Grains')}, TypeScript, Vite, ${link('https://tauri.app', 'Tauri')}</dd>
+            <dt>디자인·기획</dt><dd>Sebastian Heinz</dd>
+            <dt>코드</dt><dd>다음 도구로 작성: Claude Opus 5.5 (Claude Code) and GPT 6.2 Sol</dd>
+            <dt>선수·그라운드·경기장 아트</dt><dd>한국어판용으로 직접 제작한 그래픽(별도 라이선스 미지정). 원작은 bubbabba의 <i>Soccer Match – Top Down Football Tileset & Players</i>(유료, 이 판에는 미포함)를 사용했습니다. ${link('https://bubbabba.itch.io', 'bubbabba')}</dd>
+            <dt>라디오</dt><dd>노래 제작: ${link('https://suno.com', 'Suno')}</dd>
+            <dt>글꼴</dt><dd>Barlow Condensed, Inter, Silkscreen, Pixelify Sans, VT323, Noto Sans Symbols (SIL Open Font License, via ${link('https://fontsource.org', 'Fontsource')})</dd>
+            <dt>소스</dt><dd>${link('https://github.com/IamSebastianDev/tackle-tactics', 'github.com/IamSebastianDev/tackle-tactics')}</dd>
+            <dt>사용 기술</dt><dd>${link('https://www.npmjs.com/package/@grainular/nord', 'Nørd & Grains')}, TypeScript, Vite, ${link('https://tauri.app', 'Tauri')}</dd>
         </dl>
-        <p class="muted">Clubs, players, nations and leagues are invented. Any resemblance to real ones is a nod, not a claim.</p>
-        <h4>Licenses <small>the game's code is MIT</small></h4>
-        <p>Open-source software and fonts are part of the game too. Their licenses:</p>
+        <p class="muted">클럽, 선수, 국가, 리그는 모두 가상입니다. 실제와 닮은 부분이 있더라도 오마주일 뿐 주장이 아닙니다.</p>
+        <h4>라이선스 <small>게임 코드는 MIT</small></h4>
+        <p>오픈소스 소프트웨어와 글꼴도 게임의 일부입니다. 해당 라이선스:</p>
         ${$if(derived(notices, Boolean))
             .$then(() => html`<pre class="notices">${notices}</pre>`)
             .$else(
@@ -440,26 +440,26 @@ export const SettingsModal = (props: SettingsProps) => {
                                     ? r.text()
                                     : Promise.reject(new Error(String(r.status))),
                             )
-                            .catch(() => 'The license list is part of release builds; this build has none.')
+                            .catch(() => '라이선스 목록은 릴리스 빌드에 포함되며, 이 빌드에는 없습니다.')
                             .then((t) => notices.set(t)),
-                    )}>Show third-party licenses</button>`,
+                    )}>서드파티 라이선스 보기</button>`,
             )}
     </div>`;
     const tabs: Tab[] = ['display', 'sound', 'gameplay'];
     if (props.career) tabs.push('career');
     tabs.push('about');
     return Dialog({
-        label: 'Settings',
+        label: '설정',
         className: 'modal settings-modal',
         dismiss: props.onClose,
         children: html`<div class="modal-body">
-            <header><h2>Settings</h2><button class="ghost" ${on('click', props.onClose)}>Close <kbd>Esc</kbd></button></header>
+            <header><h2>설정</h2><button class="ghost" ${on('click', props.onClose)}>닫기 <kbd>Esc</kbd></button></header>
             <div class="seg tabs">${tabs.map((id) => {
                 const active = derived(tab, (current) => current === id);
-                return html`<button ${attr({ class: derived(active, (selected) => (selected ? 'on' : '')), 'aria-pressed': derived(active, String) })} ${on('click', () => tab.set(id))}>${id[0]!.toUpperCase() + id.slice(1)}</button>`;
+                return html`<button ${attr({ class: derived(active, (selected) => (selected ? 'on' : '')), 'aria-pressed': derived(active, String) })} ${on('click', () => tab.set(id))}>${TAB_KO[id]}</button>`;
             })}</div>
             <div class="modal-scroll set-body">${$switch(tab).$case('display', Display).$case('sound', Sound).$case('gameplay', Gameplay).$case('about', About).$default(Career)}</div>
-            <p class="set-version" title="Include this when you report a bug">Tackle Tactics v${__APP_VERSION__}${__APP_COMMIT__ ? html` <span>· build ${__APP_COMMIT__}</span>` : html``}</p>
+            <p class="set-version" title="버그를 제보할 때 함께 알려 주세요">Tackle Tactics v${__APP_VERSION__}${__APP_COMMIT__ ? html` <span>· 빌드 ${__APP_COMMIT__}</span>` : html``}</p>
         </div>`,
     });
 };

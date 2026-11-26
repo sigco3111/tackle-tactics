@@ -86,7 +86,7 @@ export const initStorage = async () => {
             }
         }
     } catch (e) {
-        console.error('Could not read the save', e);
+        console.error('세이브를 읽을 수 없습니다', e);
         if (!desktop && idbOk) {
             // a browser without a working IndexedDB (some private modes): plain localStorage
             idbOk = false;
@@ -115,7 +115,7 @@ const flush = () => {
             else if (data === null) localStorage.removeItem(KEY);
             else localStorage.setItem(KEY, data);
         } catch (e) {
-            console.error('Could not write the save', e);
+            console.error('세이브를 저장할 수 없습니다', e);
         } finally {
             if (pending === data) pending = undefined;
         }
@@ -140,4 +140,4 @@ export const whenSaved = () => writing;
 
 /** Where the save lives, for the settings screen. */
 export const saveLocation = async (): Promise<string> =>
-    desktop ? invoke<string>('save_path') : 'Browser storage (this browser and site only: export a backup now and then)';
+    desktop ? invoke<string>('save_path') : '브라우저 저장소 (이 브라우저와 사이트에서만 유효합니다. 가끔 백업을 내보내세요)';

@@ -42,20 +42,20 @@ export type Prefs = {
 
 export const UI_SCALES = [0.85, 1, 1.15, 1.3, 1.5];
 export const FONTS: Array<{ id: FontPreset; label: string; note: string }> = [
-    { id: 'broadcast', label: 'Broadcast', note: 'Condensed sports headings, crisp body text (default)' },
-    { id: 'arcade', label: 'Arcade', note: 'Pixel fonts everywhere, the retro look' },
-    { id: 'terminal', label: 'Terminal', note: 'Retro monitor text' },
-    { id: 'clean', label: 'Clean', note: 'Maximum readability' },
+    { id: 'broadcast', label: '방송', note: '압축형 스포츠 제목, 또렷한 본문 (기본)' },
+    { id: 'arcade', label: '아케이드', note: '전부 픽셀 글꼴, 레트로 느낌' },
+    { id: 'terminal', label: '터미널', note: '레트로 모니터 글자' },
+    { id: 'clean', label: '깔끔', note: '가독성 최우선' },
 ];
 export const AI_SPEED: Record<AiSpeed, number> = { fast: 0.45, normal: 1, slow: 1.7 };
 export const CONTROL_MODES: Array<{ id: ControlMode; label: string; note: string }> = [
-    { id: 'all', label: 'Every player', note: 'You order all eleven, every round.' },
+    { id: 'all', label: '전체 선수', note: '매 라운드 11명 모두에게 명령합니다.' },
     {
         id: 'near',
-        label: 'Near the ball',
-        note: 'Players within 10 cells of the ball, and always your 3 closest, ask; the rest keep formation.',
+        label: '공 근처',
+        note: '공에서 10칸 이내의 선수와 가장 가까운 3명이 명령을 받고, 나머지는 포메이션을 유지합니다.',
     },
-    { id: 'key', label: 'Key duels', note: 'The carrier, players within 5 cells of the ball, and always your 3 closest.' },
+    { id: 'key', label: '핵심 대결', note: '공 소유자, 공에서 5칸 이내의 선수, 가장 가까운 3명.' },
 ];
 /** Distance (cells) from the ball inside which a player asks for orders, per mode. */
 export const CONTROL_RADIUS: Record<ControlMode, number> = { all: 999, near: 10, key: 5 };

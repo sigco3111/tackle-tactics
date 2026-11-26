@@ -53,7 +53,7 @@ export const createConfirmation = () => {
             <header><h2 id="confirm-title">${title}</h2></header>
             <div class="modal-scroll"><p id="confirm-description">${body}</p></div>
             <footer>
-                <button type="button" class="ghost" autofocus ${on('click', () => settle(false))}>Cancel</button>
+                <button type="button" class="ghost" autofocus ${on('click', () => settle(false))}>취소</button>
                 <button type="button" class="warn" ${on('click', () => settle(true))}>${action}</button>
             </footer>
         </div>

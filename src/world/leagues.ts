@@ -139,7 +139,7 @@ const LEAGUES: Record<NationId, Tier[]> = {
 };
 
 /** A division's name in its nation ("Regionalliga"); deeper tiers than listed fall back to numbers. */
-export const leagueName = (nation: NationId, tier: number) => LEAGUES[nation][tier]?.[0] ?? `Division ${String(tier + 1)}`;
+export const leagueName = (nation: NationId, tier: number) => LEAGUES[nation][tier]?.[0] ?? `${String(tier + 1)}부 리그`;
 
 /** The short form for tabs and table cells ("Regional"). */
-export const leagueShort = (nation: NationId, tier: number) => LEAGUES[nation][tier]?.[1] ?? `Div ${String(tier + 1)}`;
+export const leagueShort = (nation: NationId, tier: number) => LEAGUES[nation][tier]?.[1] ?? `${String(tier + 1)}부`;

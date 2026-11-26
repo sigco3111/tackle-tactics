@@ -47,7 +47,7 @@ export const initMyMusic = async () => {
             myTracks.set(keys.sort().map((k) => toTrack(k, k)));
         }
     } catch (e) {
-        console.error('Could not read your songs', e);
+        console.error('곡을 읽을 수 없습니다', e);
     }
 };
 
@@ -118,6 +118,6 @@ export const songUrl = async (t: Track): Promise<string> => {
     const blob = isDesktop
         ? new Blob([await invoke<ArrayBuffer>('read_song', { name: t.mine })])
         : await idb<Blob | undefined>('readonly', (s) => s.get(t.mine!), SONGS);
-    if (!blob) throw new Error(`song not found: ${t.mine}`);
+    if (!blob) throw new Error(`곡을 찾을 수 없음: ${t.mine}`);
     return fromMemory(blob);
 };

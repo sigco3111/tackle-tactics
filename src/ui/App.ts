@@ -232,7 +232,7 @@ export const App = () => {
 
     const reportNotice = (c: Career, title: string, newsBefore: number) => {
         const fresh = c.news.slice(0, Math.max(0, c.news.length - newsBefore)).map((n) => n.text);
-        hubNotice.set({ title, lines: fresh.length ? fresh.slice(0, 8) : ['Matchday complete.'] });
+        hubNotice.set({ title, lines: fresh.length ? fresh.slice(0, 8) : ['경기일이 끝났습니다.'] });
     };
 
     const resultTitle = (c: Career, f: Fixture) => {
@@ -297,7 +297,7 @@ export const App = () => {
 
     /** Play the rest of a match live, without the pitch (the match itself keeps going on the engine). */
     const showSim = (match: MatchController, title: string, onDone: () => void) => {
-        simView = () => SimView(match, { title, doneLabel: 'Back to the club', onDone });
+        simView = () => SimView(match, { title, doneLabel: '클럽으로 돌아가기', onDone });
         screen.set('sim');
     };
 
@@ -312,7 +312,7 @@ export const App = () => {
             if (match.match.state.over) return finish();
             // leaving early: the rest is simulated for real, and you can watch it play out
             match.stop();
-            showSim(match, 'The rest of the match, simulated', () => finish(' (rest simulated)'));
+            showSim(match, '남은 경기 시뮬레이션', () => finish(' (남은 경기 시뮬레이션)'));
         };
         screen.set('match');
     };
@@ -320,7 +320,7 @@ export const App = () => {
     const simCareerMatch = () => {
         const built = buildCareerMatch();
         if (!built) return;
-        showSim(built.match, 'Simulated match', () => built.finish(' (simulated)'));
+        showSim(built.match, '시뮬레이션 경기', () => built.finish(' (시뮬레이션)'));
     };
 
     const hubActions = {
@@ -360,15 +360,16 @@ export const App = () => {
     );
 
     const formations = defaultConfig.formations.map((f) => [f.id, f.label] as [string, string]);
-    const kits = defaultConfig.kits.outfield.map((k) => [k, k[0]!.toUpperCase() + k.slice(1)] as [string, string]);
+    const KIT_KO: Record<string, string> = { blue: '파랑', yellow: '노랑', white: '흰색', hoops: '초록·흰 줄무늬', sky: '하늘색', stripes: '흑백 줄무늬', orange: '주황', red: '빨강', pink: '분홍', black: '검정', lime: '라임', keeper_pink: '분홍', keeper_black: '검정', keeper_lime: '라임', keeper_orange: '주황' };
+    const kits = defaultConfig.kits.outfield.map((k) => [k, KIT_KO[k] ?? k] as [string, string]);
 
     const SetupSquad = (side: 'Home' | 'Away') => {
         const home = side === 'Home';
         const club = derived(setupSquads, (clubs) => clubs[home ? 0 : 1]);
         const controller = derived(setting('mode'), (mode) => {
             if (mode === 'watch') return 'AI';
-            if (mode === 'hotseat') return home ? 'Player 1' : 'Player 2';
-            return home ? 'You' : 'AI';
+            if (mode === 'hotseat') return home ? '플레이어 1' : '플레이어 2';
+            return home ? '나' : 'AI';
         });
         const roster = $each(derived(club, (c) => c.squad)).$as((p) => {
             const abilities = abilitiesOf(defaultConfig, p)
@@ -378,106 +379,106 @@ export const App = () => {
             return html`<li>
                 <div class="sprite still" ${attr({ style })}></div>
                 <span class="num">${String(p.number)}</span><span class="nm" title="${p.name}">${p.name}</span>
-                <span class="cl" title="${abilities || 'No abilities yet'}">${classLabel(defaultConfig, p)}</span>
-                <span class="sp" title="Speed (turn order)">${String(p.stats.speed)}</span>
+                <span class="cl" title="${abilities || '아직 능력 없음'}">${classLabel(defaultConfig, p)}</span>
+                <span class="sp" title="속도 (턴 순서)">${String(p.stats.speed)}</span>
             </li>`;
         });
-        return html`<section class="opts squad" aria-label="${side} squad">
+        return html`<section class="opts squad" aria-label="${home ? '홈' : '원정'} 스쿼드">
             <header class="setup-club" ${attr({ style: derived(club, (c) => `--kit:${kitColor(c.kit)}`) })}>
-                <div><small>${side} · ${controller}</small><h2>${derived(club, (c) => c.name)}</h2></div>
+                <div><small>${home ? '홈' : '원정'} · ${controller}</small><h2>${derived(club, (c) => c.name)}</h2></div>
                 <span>${derived(club, (c) => defaultConfig.ai.styles[styleOf(c)].label)}</span>
             </header>
             <div class="pair setup-team-options">
-                <label>Formation ${select(home ? 'homeFormation' : 'awayFormation', formations, (v) => v)}</label>
-                <label>Kit ${select(home ? 'homeKit' : 'awayKit', kits, (v) => v)}</label>
+                <label>포메이션 ${select(home ? 'homeFormation' : 'awayFormation', formations, (v) => v)}</label>
+                <label>유니폼 ${select(home ? 'homeKit' : 'awayKit', kits, (v) => v)}</label>
             </div>
             <div class="setup-lineup">
-                <div class="setup-roster-head" aria-hidden="true"><span>Player</span><span>Class</span><span>Speed</span></div>
-                <ul class="setup-roster" aria-label="${side} lineup">${roster}</ul>
+                <div class="setup-roster-head" aria-hidden="true"><span>선수</span><span>포지션</span><span>속도</span></div>
+                <ul class="setup-roster" aria-label="${home ? '홈' : '원정'} 라인업">${roster}</ul>
             </div>
         </section>`;
     };
 
-    const Setup = () => html`<main class="setup quick-match" aria-label="Quick match">
+    const Setup = () => html`<main class="setup quick-match" aria-label="빠른 경기">
         <div class="quick-match-inner">
             <header class="quick-match-header">
-                <button class="ghost" ${on('click', () => screen.set('title'))}>← Back</button>
-                <h1>Quick match</h1>
-                <button class="ghost" ${on('click', () => showHowto.set(true))}>How to play</button>
+                <button class="ghost" ${on('click', () => screen.set('title'))}>← 뒤로</button>
+                <h1>빠른 경기</h1>
+                <button class="ghost" ${on('click', () => showHowto.set(true))}>게임 방법</button>
             </header>
             <div class="setup-grid">
-                <section class="opts setup-rules" aria-label="Match settings">
-                    <h2>Match settings</h2>
+                <section class="opts setup-rules" aria-label="경기 설정">
+                    <h2>경기 설정</h2>
                     <div class="setup-options">
-                        <div class="pair"><label>Mode ${select(
+                        <div class="pair"><label>모드 ${select(
                             'mode',
                             [
-                                ['ai', 'You vs AI'],
-                                ['hotseat', 'Hotseat (2 players)'],
-                                ['watch', 'Watch AI vs AI'],
+                                ['ai', '나 vs AI'],
+                                ['hotseat', '2인 대결 (번갈아 플레이)'],
+                                ['watch', 'AI끼리 관전'],
                             ],
                             (v) => v as Mode,
                         )}</label>
-                        <label>AI difficulty ${select(
+                        <label>AI 난이도 ${select(
                             'difficulty',
                             [
-                                ['easy', 'Easy'],
-                                ['normal', 'Normal'],
-                                ['hard', 'Hard'],
+                                ['easy', '쉬움'],
+                                ['normal', '보통'],
+                                ['hard', '어려움'],
                             ],
                             (v) => v as Difficulty,
                         )}</label></div>
-                        <label>Action timer ${range('timerSeconds', 0, 45, 1, 's')}</label>
-                        <label>Match length (rounds) ${range('rounds', 6, 40, 2, '')}</label>
-                        <label>On timeout ${select(
+                        <label>행동 제한 시간 ${range('timerSeconds', 0, 45, 1, 's')}</label>
+                        <label>경기 길이 (라운드) ${range('rounds', 6, 40, 2, '')}</label>
+                        <label>시간 초과 시 ${select(
                             'timeoutPolicy',
                             [
-                                ['lose', 'Lose the action'],
-                                ['auto', 'AI plays it for you'],
+                                ['lose', '행동 상실'],
+                                ['auto', 'AI가 대신 수행'],
                             ],
                             (v) => v as TimeoutPolicy,
                         )}</label>
-                        <h3>Match conditions</h3>
-                        <div class="pair"><label>Ground ${select(
+                        <h3>경기 환경</h3>
+                        <div class="pair"><label>경기장 ${select(
                             'ground',
                             [
-                                ['random', 'Random'],
-                                ['village', 'Village'],
-                                ['town', 'Town'],
-                                ['city', 'City'],
-                                ['grand', 'Grand'],
+                                ['random', '무작위'],
+                                ['village', '마을'],
+                                ['town', '소도시'],
+                                ['city', '대도시'],
+                                ['grand', '대형'],
                             ],
                             (v) => v as Settings['ground'],
                         )}</label>
-                        <label>Pitch ${select(
+                        <label>그라운드 ${select(
                             'pitch',
                             [
-                                ['random', 'Random'],
-                                ['lush', 'Lush'],
-                                ['dry', 'Dry'],
-                                ['muddy', 'Muddy'],
-                                ['frost', 'Frosty'],
+                                ['random', '무작위'],
+                                ['lush', '푸른 잔디'],
+                                ['dry', '메마름'],
+                                ['muddy', '진흙'],
+                                ['frost', '서리'],
                             ],
                             (v) => v as Settings['pitch'],
                         )}</label></div>
-                        <div class="pair"><label>Kick-off ${select(
+                        <div class="pair"><label>킥오프 시간 ${select(
                             'time',
                             [
-                                ['random', 'Random'],
-                                ['day', 'Afternoon'],
-                                ['dusk', 'Dusk'],
-                                ['night', 'Night'],
+                                ['random', '무작위'],
+                                ['day', '오후'],
+                                ['dusk', '해질녘'],
+                                ['night', '밤'],
                             ],
                             (v) => v as Settings['time'],
                         )}</label>
-                        <label>Weather ${select(
+                        <label>날씨 ${select(
                             'weather',
                             [
-                                ['random', 'Random'],
-                                ['clear', 'Clear'],
-                                ['rain', 'Rain'],
-                                ['snow', 'Snow'],
-                                ['fog', 'Fog'],
+                                ['random', '무작위'],
+                                ['clear', '맑음'],
+                                ['rain', '비'],
+                                ['snow', '눈'],
+                                ['fog', '안개'],
                             ],
                             (v) => v as Settings['weather'],
                         )}</label></div>
@@ -487,24 +488,24 @@ export const App = () => {
                 ${SetupSquad('Away')}
             </div>
             <footer class="quick-match-actions">
-                <button class="ghost" ${on('click', () => set('seed', Math.floor(Math.random() * 1e9)))}>New squads</button>
-                <button class="primary" ${on('click', start)}>Kick off →</button>
+                <button class="ghost" ${on('click', () => set('seed', Math.floor(Math.random() * 1e9)))}>새 스쿼드</button>
+                <button class="primary" ${on('click', start)}>킥오프 →</button>
             </footer>
         </div>
         ${$if(showHowto).$then(() =>
             Dialog({
-                label: 'How to play',
+                label: '게임 방법',
                 dismiss: () => showHowto.set(false),
-                children: html`<div class="modal-body howto-modal"><header><h2>How to play</h2><button class="ghost" ${on('click', () => showHowto.set(false))}>Close</button></header>
+                children: html`<div class="modal-body howto-modal"><header><h2>게임 방법</h2><button class="ghost" ${on('click', () => showHowto.set(false))}>닫기</button></header>
                 <div class="modal-scroll"><ul>
-                    <li>All 22 players act one at a time, fastest first, teams alternating. A <b>round</b> is everyone acting once.</li>
-                    <li>Each action has a timer. Act early to pass the baton; hesitate and you lose the action.</li>
-                    <li><b>Move</b> (blue). Off-ball runs stop when they enter an opponent's adjacent cell — that's marking.</li>
-                    <li>With the ball you may dribble, then <b>pass or shoot</b>: aim anywhere — the orange zone is where the ball may land. Longer = bigger gamble. Aim at the goal mouth to shoot.</li>
-                    <li><b>Reactions</b>: every player has one per round. Dribble past someone or play the ball near them and they get a tackle/intercept roll. Pink cells show live reaction zones; dimmed rings are spent.</li>
-                    <li>Passes longer than ${String(defaultConfig.ball.loftThreshold)} cells are lofted: only contestable near take-off and landing.</li>
-                    <li><b>Abilities</b> come from class levels (hover a player's class for their kit). Wingers sprint, trick and cross; strikers run in behind and pick their shot; midfielders press, thread through balls and set the tempo; defenders slide, man-mark and foul; keepers command and rush out. Multiclass players get both kits. Most have a cooldown in rounds.</li>
-                    <li>Keys: <kbd>Space</kbd> hold / end, <kbd>1</kbd>–<kbd>9</kbd> abilities, <kbd>T</kbd> tackle, <kbd>Esc</kbd> cancel, <kbd>A</kbd> let the AI play this action.</li>
+                    <li>22명의 선수가 한 명씩, 가장 빠른 선수부터 팀이 번갈아 가며 행동합니다. 모두가 한 번씩 행동하면 한 <b>라운드</b>입니다.</li>
+                    <li>각 행동에는 제한 시간이 있습니다. 빨리 행동해서 순서를 넘기세요. 망설이면 그 행동을 잃습니다.</li>
+                    <li><b>이동</b>(파란색). 공 없이 달리다가 상대 선수의 인접 칸에 들어서면 멈춥니다. 이것이 마킹입니다.</li>
+                    <li>공을 가지고 있으면 드리블한 뒤 <b>패스 또는 슛</b>을 할 수 있습니다. 어디든 조준하세요. 주황색 구역은 공이 떨어질 수 있는 범위입니다. 멀수록 더 큰 도박입니다. 골문을 겨냥하면 슛입니다.</li>
+                    <li><b>반응 행동</b>: 모든 선수는 라운드마다 한 번씩 가집니다. 누군가를 드리블로 지나치거나 근처로 공을 보내면 상대가 태클/인터셉트 판정을 얻습니다. 분홍 칸은 반응이 가능한 구역이고, 흐린 원은 이미 사용한 것입니다.</li>
+                    <li>${String(defaultConfig.ball.loftThreshold)}칸보다 긴 패스는 띄운 공이 되어, 출발과 착지 근처에서만 경합할 수 있습니다.</li>
+                    <li><b>능력</b>은 포지션 레벨에서 나옵니다(포지션 위에 마우스를 올리면 능력 목록이 보입니다). 윙어는 스프린트, 트릭, 크로스를 쓰고, 스트라이커는 뒷공간 침투와 슛 선택을 하며, 미드필더는 압박, 스루패스, 템포 조절을 합니다. 수비수는 슬라이딩, 대인 마크, 파울을 하고, 골키퍼는 지휘와 전진 수비를 합니다. 복수 포지션 선수는 두 능력 세트를 모두 얻습니다. 대부분 라운드 단위의 쿨다운이 있습니다.</li>
+                    <li>단축키: <kbd>Space</kbd> 대기/종료, <kbd>1</kbd>–<kbd>9</kbd> 능력, <kbd>T</kbd> 태클, <kbd>Esc</kbd> 취소, <kbd>A</kbd> 이 행동을 AI가 대신 수행.</li>
                 </ul></div>
             </div>`,
             }),
@@ -540,38 +541,38 @@ export const App = () => {
                 ? [
                       {
                           id: 'continue',
-                          label: 'Continue career',
-                          desc: `${userClub(c).name} · Season ${String(c.season)} · ${leagueName(c.nation, userClub(c).tier)}`,
+                          label: '커리어 이어하기',
+                          desc: `${userClub(c).name} · ${String(c.season)}시즌 · ${leagueName(c.nation, userClub(c).tier)}`,
                           go: () => screen.set('hub'),
                           cls: 'primary',
                       },
                   ]
                 : []),
-            { id: 'tutorial', label: 'Tutorial', desc: 'Eight short lessons on the training ground. Start here.', go: startTutorial },
+            { id: 'tutorial', label: '튜토리얼', desc: '훈련장에서 배우는 짧은 8개 레슨. 여기서 시작하세요.', go: startTutorial },
             {
                 id: 'career',
-                label: 'New career',
-                desc: 'Take a club from the bottom division to the top. Train, trade, promote.',
+                label: '새 커리어',
+                desc: '최하위 리그의 클럽을 최상위로 이끄세요. 훈련하고, 영입하고, 승격하세요.',
                 go: () => screen.set('newCareer'),
             },
             {
                 id: 'quick',
-                label: 'Quick match',
-                desc: 'A one-off match: against the AI, hotseat, or watch the AI play.',
+                label: '빠른 경기',
+                desc: '단판 경기: AI와 대결, 2인 대결, 또는 AI끼리 관전.',
                 go: () => screen.set('setup'),
             },
             {
                 id: 'settings',
-                label: 'Settings',
-                desc: 'UI scale, font, sound, pacing and match defaults.',
+                label: '설정',
+                desc: 'UI 크기, 글꼴, 사운드, 진행 속도, 경기 기본값.',
                 go: () => showSettings.set(true),
             },
             ...(isDesktop
                 ? [
                       {
                           id: 'exit',
-                          label: 'Exit',
-                          desc: 'Close the game. Your career is saved automatically.',
+                          label: '종료',
+                          desc: '게임을 닫습니다. 커리어는 자동으로 저장됩니다.',
                           go: () => void quitApp(),
                           cls: 'exit',
                       },
@@ -603,7 +604,7 @@ export const App = () => {
             <h1>Tackle <span>Tactics</span></h1>
             <nav class="title-menu">${menu}</nav>
             <p class="title-desc">${desc}</p>
-            <p class="credits">Art by bubbabba</p>
+            <p class="credits">그래픽: 한국어판 직접 제작</p>
         </div></div>`;
     };
 
@@ -627,11 +628,11 @@ export const App = () => {
         <p class="muted nc-division-note">${derived(combined([startTier, nation]), ([t, n]) => {
             const where =
                 t === cc.divisions - 1
-                    ? 'The bottom of the pyramid: the long climb.'
+                    ? '피라미드의 맨 아래: 긴 여정의 시작입니다.'
                     : t === 0
-                      ? 'The top flight: stay up and chase the Champions Cup.'
-                      : 'Mid-pyramid: promotion is the goal.';
-            return `${leagueName(n, t)}. ${where} Budget ${money(cc.startingBudget[t]!)}, squad of tier ${t + 1} quality, grounds up to ${sizeLabel(startingGroundSize(defaultConfig, t)).toLowerCase()}.`;
+                      ? '최상위 리그: 잔류하고 챔피언스컵에 도전하세요.'
+                      : '중간 리그: 승격이 목표입니다.';
+            return `${leagueName(n, t)}. ${where} 예산 ${money(cc.startingBudget[t]!)}, ${t + 1}부 수준의 스쿼드, 최대 ${sizeLabel(startingGroundSize(defaultConfig, t)).toLowerCase()} 규모의 경기장.`;
         })}</p>`;
         const groundEditor = GroundEditor(defaultConfig, groundLook, groundSize, {
             allowed: (sz) => groundAllowed(defaultConfig, sz, startTier()),
@@ -656,15 +657,14 @@ export const App = () => {
                 .toUpperCase();
         const shownShort = derived(combined([name, short, shortEdited]), ([n, sh, edited]) => (edited ? sh : autoShort(n)) || 'YOU');
         const kitName = (k: string) => {
-            const n = k.replace('keeper_', '');
-            return n[0]!.toUpperCase() + n.slice(1);
+            return KIT_KO[k] ?? k;
         };
         // built once each: only the selected / clashing state and the preview kits update (no sprite rebuilds)
         const swatch = (k: string, which: 'home' | 'away' | 'keeper') => {
             const target = which === 'home' ? kit : which === 'away' ? awayKit : keeperKit;
             const clash = derived(kit, (home) => which === 'away' && kitsClash(defaultConfig, k, home));
             const cls = derived(combined([target, clash]), ([cur, c]) => `kit-swatch ${cur === k ? 'on' : ''} ${c ? 'clash' : ''}`);
-            const title = derived(clash, (c) => (c ? `${kitName(k)}: clashes with the home kit` : kitName(k)));
+            const title = derived(clash, (c) => (c ? `${kitName(k)}: 홈 유니폼과 색이 겹칩니다` : kitName(k)));
             const art = spriteStyle(defaultConfig, which === 'keeper' ? k : `${k}_player_1`, 'idle', 'down');
             return html`<button ${attr({ class: cls, disabled: clash, title })} ${on('click', () => (which === 'home' ? chooseHomeKit(k) : target.set(k)))}>
                 <span class="portrait kit-portrait"><span class="sprite still" style="${art}"></span></span>
@@ -675,10 +675,10 @@ export const App = () => {
             html`<span class="kit-model"><span class="sprite" ${attr({ style: derived(source, (k) => spriteStyle(defaultConfig, sprite(k), anim, 'down')) })}></span></span>`;
         const preview = html`<div class="kit-preview">
             <div class="kit-crest" ${attr({ style: derived(kit, (k) => `--kit:${kitColor(k)}`) })}><span>${shownShort}</span></div>
-            <b>${derived(name, (n) => n.trim() || 'Your club')}</b>
+            <b>${derived(name, (n) => n.trim() || '내 클럽')}</b>
             <div class="kit-pitch">
                 ${model(kit, (k) => `${k}_player_1`)}${model(kit, (k) => `${k}_player_2`)}${model(keeperKit, (k) => k, 'gk_ready')}
-                <span class="kit-away-label">Away</span>
+                <span class="kit-away-label">원정</span>
                 ${model(awayKit, (k) => `${k}_player_1`)}${model(awayKit, (k) => `${k}_player_2`)}
             </div>
         </div>`;
@@ -696,7 +696,7 @@ export const App = () => {
             return { clubs, players };
         };
         const samples = Object.fromEntries(NATION_IDS.map((id) => [id, sample(id)])) as Record<NationId, ReturnType<typeof sample>>;
-        const countryPicker = html`<div class="nation-pick" role="radiogroup" aria-label="Country">${NATION_IDS.map(
+        const countryPicker = html`<div class="nation-pick" role="radiogroup" aria-label="국가">${NATION_IDS.map(
             (id) =>
                 html`<button type="button" role="radio" ${attr({
                     class: derived(nation, (cur) => `nation-flag${cur === id ? ' on' : ''}`),
@@ -705,10 +705,10 @@ export const App = () => {
         )}</div>
         <p class="nation-name">${derived(nation, (id) => NATIONS[id].name)}</p>
         <dl class="nation-sample">
-            <dt>Clubs</dt><dd>${derived(nation, (id) => samples[id].clubs.join(' · '))}</dd>
-            <dt>Players</dt><dd>${derived(nation, (id) => samples[id].players.join(' · '))}</dd>
+            <dt>클럽</dt><dd>${derived(nation, (id) => samples[id].clubs.join(' · '))}</dd>
+            <dt>선수</dt><dd>${derived(nation, (id) => samples[id].players.join(' · '))}</dd>
         </dl>
-        <p class="muted">Your club plays in its 5-tier pyramid, in the division you choose. Most players at its clubs are local; the transfer market scouts every country.</p>`;
+        <p class="muted">내 클럽은 5단계 리그 피라미드에서 선택한 디비전에서 시작합니다. 클럽 선수 대부분은 현지 출신이며, 이적 시장에서는 모든 나라의 선수를 찾아볼 수 있습니다.</p>`;
         const s = settings();
         const startError = grain('');
         const create = async () => {
@@ -716,9 +716,9 @@ export const App = () => {
             if (
                 existing &&
                 !(await confirmation.confirm({
-                    title: 'Start a new career?',
-                    body: `Your current career with ${userClub(existing).name} will be replaced.`,
-                    action: 'Start new career',
+                    title: '새 커리어를 시작할까요?',
+                    body: `${userClub(existing).name}(으)로 진행 중인 현재 커리어가 사라집니다.`,
+                    action: '새 커리어 시작',
                 }))
             )
                 return;
@@ -743,17 +743,17 @@ export const App = () => {
                 },
             );
             if (!saveCareer(next)) {
-                startError.set('Could not save the new career.');
+                startError.set('새 커리어를 저장하지 못했습니다.');
                 return;
             }
             career.set(next);
             hubNotice.set({
-                title: `Welcome to ${userClub(next).name}`,
+                title: `${userClub(next).name}에 오신 것을 환영합니다`,
                 lines: [
-                    `You start in the ${leagueName(next.nation, userClub(next).tier)}, tier ${userClub(next).tier + 1} of 5 of the ${NATIONS[next.nation].adjective} pyramid. The top 2 clubs are promoted each season.`,
-                    `The ${seasonDays(defaultConfig, next)}-day season includes home and away league fixtures and the all-division ${CUP_NAME}.`,
-                    'Pick two drills in Training: players whose class fits them earn the most XP. Set your XI in Tactics and buy or sell players in the Market.',
-                    'Press the yellow button at the top right to move the calendar on.',
+                    `${NATIONS[next.nation].adjective} 피라미드 5단계 중 ${userClub(next).tier + 1}단계인 ${leagueName(next.nation, userClub(next).tier)}에서 시작합니다. 매 시즌 상위 2개 클럽이 승격합니다.`,
+                    `${seasonDays(defaultConfig, next)}일 시즌에는 홈 앤드 어웨이 리그 경기와 전 디비전이 참가하는 ${CUP_NAME}가 포함됩니다.`,
+                    '훈련에서 드릴 두 가지를 고르세요. 포지션에 맞는 선수가 경험치를 가장 많이 얻습니다. 전술에서 선발 11명을 정하고, 시장에서 선수를 사고파세요.',
+                    '오른쪽 위의 노란 버튼을 눌러 일정을 진행하세요.',
                 ],
             });
             screen.set('hub');
@@ -765,46 +765,46 @@ export const App = () => {
             html`<li><button type="button" ${attr({ class: derived(step, (cur) => (cur === n ? 'on' : '')), 'aria-current': derived(step, (cur) => (cur === n ? 'step' : 'false')) })} ${on('click', () => step.set(n))}><b>${String(n)}</b>${label}</button></li>`;
         return html`<div class="setup"><div class="setup-inner new-career">
             <header class="nc-head">
-                <h1>New <span>career</span></h1>
-                <ol class="nc-steps">${stepChip(1, 'Country')}${stepChip(2, 'Your club')}</ol>
+                <h1>새 <span>커리어</span></h1>
+                <ol class="nc-steps">${stepChip(1, '국가')}${stepChip(2, '내 클럽')}</ol>
             </header>
             <div class="nc-step nc-country" ${shownOn(1)}>
                 <section class="opts">
-                    <h4>Country</h4>
+                    <h4>국가</h4>
                     ${countryPicker}
                 </section>
                 <section class="opts">
-                    <h4>Starting division</h4>
+                    <h4>시작 디비전</h4>
                     ${divisionPicker}
-                    <h4>Match settings</h4>
-                    <label>Action timer ${range('timerSeconds', 0, 45, 1, 's')}</label>
-                    <label>Match length (rounds) ${range('rounds', 6, 40, 2, '')}</label>
-                    <label>AI difficulty ${select(
+                    <h4>경기 설정</h4>
+                    <label>행동 제한 시간 ${range('timerSeconds', 0, 45, 1, 's')}</label>
+                    <label>경기 길이 (라운드) ${range('rounds', 6, 40, 2, '')}</label>
+                    <label>AI 난이도 ${select(
                         'difficulty',
                         [
-                            ['easy', 'Easy'],
-                            ['normal', 'Normal'],
-                            ['hard', 'Hard'],
+                            ['easy', '쉬움'],
+                            ['normal', '보통'],
+                            ['hard', '어려움'],
                         ],
                         (v) => v as Difficulty,
                     )}</label>
-                    <label>On timeout ${select(
+                    <label>시간 초과 시 ${select(
                         'timeoutPolicy',
                         [
-                            ['lose', 'Lose the action'],
-                            ['auto', 'AI plays it for you'],
+                            ['lose', '행동 상실'],
+                            ['auto', 'AI가 대신 수행'],
                         ],
                         (v) => v as TimeoutPolicy,
                     )}</label>
-                    <p class="muted">Match settings apply to every match you play in this career. Default ${String(s.rounds)} rounds; 12–16 is a brisk match.</p>
+                    <p class="muted">경기 설정은 이 커리어의 모든 경기에 적용됩니다. 기본 ${String(s.rounds)}라운드이며, 12~16라운드가 속도감 있는 경기입니다.</p>
                 </section>
             </div>
             <div class="nc-step nc-club" ${shownOn(2)}>
                 <section class="opts">
-                    <h4>Your club</h4>
+                    <h4>내 클럽</h4>
                     <div class="nc-names">
-                        <label>Club name <input type="text" maxlength="28" placeholder="Leave empty for a random club" ${on('input', (e) => name.set((e.target as HTMLInputElement).value))} /></label>
-                        <label>Short <input type="text" class="short-input" maxlength="3" ${attr({ value: shownShort })} ${on(
+                        <label>클럽 이름 <input type="text" maxlength="28" placeholder="비워 두면 무작위 클럽" ${on('input', (e) => name.set((e.target as HTMLInputElement).value))} /></label>
+                        <label>약칭 <input type="text" class="short-input" maxlength="3" ${attr({ value: shownShort })} ${on(
                             'input',
                             (e) => {
                                 shortEdited.set(true);
@@ -813,22 +813,22 @@ export const App = () => {
                         )} /></label>
                     </div>
                     ${preview}
-                    <h4>Your ground</h4>
+                    <h4>내 경기장</h4>
                     ${groundEditor}
                 </section>
                 <section class="opts">
-                    <h4>Home kit</h4>
+                    <h4>홈 유니폼</h4>
                     <div class="kit-grid">${kits.map(([k]) => swatch(k, 'home'))}</div>
-                    <h4>Away kit <small>worn when the home kit clashes with the hosts'</small></h4>
+                    <h4>원정 유니폼 <small>홈 팀 유니폼과 색이 겹칠 때 착용</small></h4>
                     <div class="kit-grid">${kits.map(([k]) => swatch(k, 'away'))}</div>
-                    <h4>Goalkeeper</h4>
+                    <h4>골키퍼</h4>
                     <div class="kit-grid">${defaultConfig.kits.keepers.map((k) => swatch(k, 'keeper'))}</div>
                 </section>
             </div>
             <footer class="nc-actions">
-                <button class="ghost" ${on('click', () => (step() === 1 ? screen.set('title') : step.set(1)))}>${derived(step, (cur) => (cur === 1 ? 'Back' : '← Country'))}</button>
+                <button class="ghost" ${on('click', () => (step() === 1 ? screen.set('title') : step.set(1)))}>${derived(step, (cur) => (cur === 1 ? '뒤로' : '← 국가'))}</button>
                 <p class="neg" role="status" ${attr({ hidden: derived(startError, (message) => !message) })}>${startError}</p>
-                <button class="primary" ${on('click', () => (step() === 1 ? step.set(2) : void create()))}>${derived(step, (cur) => (cur === 1 ? 'Next: your club →' : 'Start career'))}</button>
+                <button class="primary" ${on('click', () => (step() === 1 ? step.set(2) : void create()))}>${derived(step, (cur) => (cur === 1 ? '다음: 내 클럽 →' : '커리어 시작'))}</button>
             </footer>
         </div></div>`;
     };

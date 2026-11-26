@@ -79,18 +79,18 @@ export const GroundEditor = (
             ${(['tl', 'tr', 'bl', 'br'] as const).map((corner) => html`<i class="g-flag ${corner}" ${attr({ style: derived(look, (l) => `background:${FLAG_BG[l.flag]}`) })}></i>`)}
         </div>
         <div class="g-caption">
-            <label class="g-name">Ground name <input type="text" maxlength="28" placeholder="${placeholder}" ${attr({ value: derived(look, (l) => l.name) })} ${on('input', (e) => set('name', (e.target as HTMLInputElement).value))} /></label>
-            <span>${derived(size, (s) => `${sizeLabel(s)} · ${cfg.career.ground[s].capacity.toLocaleString('en')} seats`)}</span>
+            <label class="g-name">구장 이름 <input type="text" maxlength="28" placeholder="${placeholder}" ${attr({ value: derived(look, (l) => l.name) })} ${on('input', (e) => set('name', (e.target as HTMLInputElement).value))} /></label>
+            <span>${derived(size, (s) => `${sizeLabel(s)} · ${cfg.career.ground[s].capacity.toLocaleString('en')}석`)}</span>
         </div>
     </div>`;
 
     const sizeCards = choice
-        ? html`<h4>Size</h4><div class="g-sizes">${STADIUM_SIZES.map((s) => {
+        ? html`<h4>규모</h4><div class="g-sizes">${STADIUM_SIZES.map((s) => {
               const ok = derived(choice.watch, () => choice.allowed(s));
               const cls = derived(combined([size, ok]), ([cur, can]) => `g-size${cur === s ? ' on' : ''}${can ? '' : ' locked'}`);
               return html`<button type="button" ${attr({ class: cls, disabled: derived(ok, (can) => !can), title: derived(ok, (can) => (can ? sizeLabel(s) : choice.lockedNote(s))) })} ${on('click', () => ok() && size.set(s))}>
-                  <b>${sizeLabel(s).replace(/ (ground|stadium)$/, '')}</b><small>${cfg.career.ground[s].capacity.toLocaleString('en')} seats</small>
-                  <em>${derived(ok, (can) => (can ? `+${Math.round(cfg.career.ground[s].gate * 100)}% gate` : choice.lockedNote(s)))}</em>
+                  <b>${sizeLabel(s).replace(/ (구장|스타디움)$/, '')}</b><small>${cfg.career.ground[s].capacity.toLocaleString('en')}석</small>
+                  <em>${derived(ok, (can) => (can ? `+${Math.round(cfg.career.ground[s].gate * 100)}% 입장 수익` : choice.lockedNote(s)))}</em>
               </button>`;
           })}</div>`
         : html``;
@@ -99,18 +99,18 @@ export const GroundEditor = (
     return html`<div class="ground-editor">
         ${preview}
         ${sizeCards}
-        <h4>Mowing</h4>
+        <h4>잔디 깎기</h4>
         ${seg('pattern', MOW_PATTERNS, patternLabel)}
         ${$if(bands).$then(
             () =>
-                html`<label class="g-bands">Stripes <input type="range" min="6" max="16" step="2" ${attr({ value: derived(look, (l) => String(l.bands)) })} ${on('input', (e) => set('bands', Number((e.target as HTMLInputElement).value)))} /><b>${derived(look, (l) => String(l.bands))}</b></label>`,
+                html`<label class="g-bands">줄 수 <input type="range" min="6" max="16" step="2" ${attr({ value: derived(look, (l) => String(l.bands)) })} ${on('input', (e) => set('bands', Number((e.target as HTMLInputElement).value)))} /><b>${derived(look, (l) => String(l.bands))}</b></label>`,
         )}
         <div class="g-row">
-            <div><h4 title="Muddy pitches bring rain, frosty ones snow">Pitch</h4>${seg('condition', PITCH_CONDITIONS, conditionLabel, (c) => `background:${GRASS[c][0]}`)}</div>
-            <div><h4>Corner flags</h4>${seg(
+            <div><h4 title="질척한 구장은 비를, 서리 낀 구장은 눈을 부릅니다">피치</h4>${seg('condition', PITCH_CONDITIONS, conditionLabel, (c) => `background:${GRASS[c][0]}`)}</div>
+            <div><h4>코너 깃발</h4>${seg(
                 'flag',
                 CORNER_FLAGS,
-                (f) => f[0]!.toUpperCase() + f.slice(1),
+                (f) => ({ red: '빨강', yellow: '노랑', checked: '체크' })[f as 'red'] ?? f,
                 (f) => `background:${FLAG_BG[f]}`,
             )}</div>
         </div>

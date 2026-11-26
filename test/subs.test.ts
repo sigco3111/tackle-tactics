@@ -33,14 +33,14 @@ describe('substitutions', () => {
         const m = setup();
         const keeper = m.keeperOf(0)!;
         const outfielder = m.bench(0).find((p) => p.cls !== 'keeper')!;
-        expect(m.subBlock(0, keeper.id, outfielder.id)).toMatch(/keeper/i);
+        expect(m.subBlock(0, keeper.id, outfielder.id)).toMatch(/골키퍼/);
     });
 
     it('waiting for the ball to move on is a timing reason, not a lasting one', () => {
         const m = setup();
         const carrier = m.carrier()!;
         const on = m.bench(carrier.team).find((p) => (p.cls === 'keeper') === (carrier.player.cls === 'keeper'))!;
-        expect(m.subBlock(carrier.team, carrier.id, on.id)).toBe('Not while they have the ball');
+        expect(m.subBlock(carrier.team, carrier.id, on.id)).toBe('공을 가진 선수는 교체할 수 없습니다');
         // a queued change only checks the lasting reasons
         expect(m.subBlock(carrier.team, carrier.id, on.id, false)).toBeNull();
     });

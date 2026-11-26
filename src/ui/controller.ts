@@ -56,12 +56,12 @@ type Input =
 const setPieceReason = (events: MatchEvent[], i: number, m: Match): string => {
     for (let k = i - 1; k >= 0; k--) {
         const e = events[k]!;
-        if (e.t === 'save') return 'Tipped round the post';
-        if (e.t === 'intercept' && e.success) return e.block ? 'Blocked behind' : 'Deflected behind';
-        if (e.t === 'header') return 'Headed behind';
-        if (e.t === 'wide') return 'Off a defender';
-        if (e.t === 'foul') return `Foul by ${m.piece(e.by).player.name}`;
-        if (e.t === 'kick') return 'Deflected behind';
+        if (e.t === 'save') return '골대 옆으로 쳐냄';
+        if (e.t === 'intercept' && e.success) return e.block ? '수비에 막혀 골라인 밖으로' : '굴절되어 골라인 밖으로';
+        if (e.t === 'header') return '헤딩으로 골라인 밖으로';
+        if (e.t === 'wide') return '수비수에 맞고 나감';
+        if (e.t === 'foul') return `${m.piece(e.by).player.name} 선수의 파울`;
+        if (e.t === 'kick') return '굴절되어 골라인 밖으로';
     }
     return '';
 };
@@ -226,7 +226,7 @@ export class MatchController {
         const next = order[(order.indexOf(prefs().controlMode) + 1) % order.length]!;
         setPref('controlMode', next);
         const def = CONTROL_MODES.find((c) => c.id === next)!;
-        this.flash(`Focus: ${def.label} — ${def.note}`);
+        this.flash(`포커스: ${def.label} — ${def.note}`);
         this.bump();
     }
 
@@ -448,7 +448,7 @@ export class MatchController {
         const m = this.match;
         const k = castFor(m);
         audio.startCrowd();
-        await this.showBanner('Training ground', 'Coach Marlow walks you through it', 1500);
+        await this.showBanner('훈련장', '말로 코치가 안내합니다', 1500);
         for (let i = 0; i < lessons.length && !this.stopped; i++) {
             const L = lessons[i]!;
             let retry: string | null = null;
@@ -487,11 +487,11 @@ export class MatchController {
                         this.lesson.set({
                             i,
                             n: lessons.length,
-                            title: 'Extra turn',
+                            title: '추가 턴',
                             text:
                                 owed.team === 0
-                                    ? `Won it! A tackle winner goes again straight away: ${owed.player.name} gets an extra turn. Carry it clear of the scrum or pass it on (no shooting on an extra turn).`
-                                    : `Missed. A failed challenge hands ${owed.player.name} a free turn to escape. Watch them get away.`,
+                                    ? `빼앗았습니다! 태클에 성공하면 곧바로 한 번 더 행동합니다. ${owed.player.name} 선수가 추가 턴을 얻습니다. 몰려 있는 곳에서 공을 빼내거나 패스하세요(추가 턴에는 슛 불가).`
+                                    : `실패했습니다. 태클에 실패하면 ${owed.player.name} 선수가 빠져나갈 무료 턴을 얻습니다. 빠져나가는 모습을 지켜보세요.`,
                             retry: null,
                             praise: null,
                             info: false,
@@ -509,7 +509,7 @@ export class MatchController {
                         title: L.title,
                         text: L.text(k),
                         retry: null,
-                        praise: L.praise ?? 'Nice.',
+                        praise: L.praise ?? '좋아요.',
                         info: false,
                     });
                     audio.play('trap');
@@ -537,7 +537,7 @@ export class MatchController {
             this.intro.set(false);
             if (this.stopped) return;
         }
-        await this.showBanner(`${m.state.clubs[0].short} vs ${m.state.clubs[1].short}`, 'Kick off', 1100);
+        await this.showBanner(`${m.state.clubs[0].short} vs ${m.state.clubs[1].short}`, '킥오프', 1100);
         audio.play('whistle');
         this.say(this.commentator.referee(style.note));
         for (const t of [0, 1] as TeamSide[]) {
@@ -565,7 +565,7 @@ export class MatchController {
             }
             for (const e of ev) {
                 if (e.t === 'bonus') {
-                    this.popup(m.piece(e.id).pos, e.reason === 'beat' ? 'Beat the tackle' : 'Extra turn', 'good');
+                    this.popup(m.piece(e.id).pos, e.reason === 'beat' ? '태클 돌파' : '추가 턴', 'good');
                     audio.play('ability');
                     await sleep(450);
                 }
@@ -578,13 +578,13 @@ export class MatchController {
                         this.halftime.set(false);
                         if (this.stopped) return;
                         await this.humanSubs();
-                    } else await this.showBanner('Half time', `${m.state.score[0]} – ${m.state.score[1]}`, 1800);
+                    } else await this.showBanner('전반 종료', `${m.state.score[0]} – ${m.state.score[1]}`, 1800);
                     audio.play('whistle');
                 }
                 if (e.t === 'fulltime') {
                     audio.play('whistleEnd');
                     audio.stopCrowd();
-                    this.banner.set({ text: 'Full time', sub: `${m.state.score[0]} – ${m.state.score[1]}` });
+                    this.banner.set({ text: '경기 종료', sub: `${m.state.score[0]} – ${m.state.score[1]}` });
                     await sleep(1600);
                     this.banner.set(null);
                     this.report.set(true);
@@ -610,11 +610,11 @@ export class MatchController {
 
     /** Why this change can't be made or queued, or null (counts changes already queued). */
     subProblem(team: TeamSide, offId: string, onId: string): string | null {
-        if (!this.isHuman(team)) return 'The AI manages its own bench';
+        if (!this.isHuman(team)) return 'AI가 자체적으로 벤치를 운영합니다';
         const queued = this.pendingSubs().filter((x) => x.team === team);
-        if (this.match.subsLeft(team) - queued.length <= 0) return 'No substitutions left';
-        if (queued.some((x) => x.off === offId)) return 'Already coming off';
-        if (queued.some((x) => x.on === onId)) return 'Already coming on';
+        if (this.match.subsLeft(team) - queued.length <= 0) return '남은 교체 횟수가 없습니다';
+        if (queued.some((x) => x.off === offId)) return '이미 교체 아웃 예정입니다';
+        if (queued.some((x) => x.on === onId)) return '이미 교체 인 예정입니다';
         return this.match.subBlock(team, offId, onId, false);
     }
 
@@ -635,7 +635,7 @@ export class MatchController {
             return null;
         }
         this.pendingSubs.update((list) => [...list, { team, off: offId, on: onId }]);
-        this.flash(`Change queued: ${m.piece(offId).player.name} off at the next break`);
+        this.flash(`교체 예약됨: ${m.piece(offId).player.name} 선수가 다음 휴식 때 교체 아웃`);
         audio.play('click');
         this.bump();
         return null;
@@ -736,7 +736,7 @@ export class MatchController {
         // a free kick is about to be taken: make it an occasion
         if (p.status.fouled && m.carrier()?.id === p.id && !m.state.setPiece) {
             audio.play('whistle');
-            await this.showBanner('Free kick', `${p.player.name} · ${m.state.clubs[p.team].short}`, 900);
+            await this.showBanner('프리킥', `${p.player.name} · ${m.state.clubs[p.team].short}`, 900);
         }
         const think = autoHuman ? this.cfg.match.aiThinkMs * 0.35 : this.cfg.match.aiThinkMs;
         await this.whilePaused();
@@ -949,7 +949,7 @@ export class MatchController {
                         this.jolt();
                     } else audio.play('pass');
                     this.ballMs = 250;
-                    this.popup(d.pos, e.success ? (e.reaction ? 'Stolen!' : 'Tackle!') : 'Missed!', e.success ? 'bad' : 'good');
+                    this.popup(d.pos, e.success ? (e.reaction ? '탈취!' : '태클!') : '실패!', e.success ? 'bad' : 'good');
                     this.bump();
                     await sleep(650);
                     break;
@@ -988,7 +988,7 @@ export class MatchController {
                 }
                 case 'intercept': {
                     const o = m.piece(e.by);
-                    this.popup(o.pos, e.success ? (e.block ? 'Blocked!' : 'Intercepted!') : 'Too slow', e.success ? 'bad' : 'good');
+                    this.popup(o.pos, e.success ? (e.block ? '막았다!' : '인터셉트!') : '늦었다', e.success ? 'bad' : 'good');
                     this.setAnim(e.by, e.success ? 'trap' : 'tired', 600);
                     if (e.success) {
                         audio.play('trap');
@@ -1012,7 +1012,7 @@ export class MatchController {
                         audio.play('trap');
                     }
                     if (e.t === 'out') {
-                        this.popup(e.at, 'Out', 'neutral');
+                        this.popup(e.at, '아웃', 'neutral');
                         audio.play('whistle');
                     }
                     this.bump();
@@ -1025,7 +1025,7 @@ export class MatchController {
                     this.ballMs = 200;
                     const k = m.piece(e.by);
                     this.setAnim(e.by, e.held ? 'gk_catch' : 'gk_punch', 700);
-                    this.popup(k.pos, e.held ? 'Saved!' : 'Parried!', 'bad');
+                    this.popup(k.pos, e.held ? '선방!' : '쳐냄!', 'bad');
                     audio.play('save');
                     this.jolt();
                     this.bump();
@@ -1035,7 +1035,7 @@ export class MatchController {
                 case 'wide': {
                     this.bump();
                     await sleep(this.ballMs);
-                    this.popup(m.ballCell(), 'Wide!', 'neutral');
+                    this.popup(m.ballCell(), '빗나감!', 'neutral');
                     audio.play('groan');
                     break;
                 }
@@ -1056,7 +1056,7 @@ export class MatchController {
                     const scorer = m.piece(e.scorer);
                     this.pendingRestart = e.team;
                     await this.showBanner(
-                        'GOAL!',
+                        '골!',
                         `${scorer.player.name} · ${m.state.score[0]} – ${m.state.score[1]}`,
                         this.cfg.match.goalPauseMs,
                     );
@@ -1080,8 +1080,8 @@ export class MatchController {
                     this.popup(by.pos, def.label, 'neutral');
                     audio.play('ability');
                     if (e.ability === 'command' || e.ability === 'tempo') this.setAnim(e.by, 'clap', 700);
-                    if (e.ability === 'mark' && e.target) this.popup(m.piece(e.target).pos, 'Marked', 'bad');
-                    if (e.ability === 'tempo' && e.target) this.popup(m.piece(e.target).pos, 'Go next!', 'good');
+                    if (e.ability === 'mark' && e.target) this.popup(m.piece(e.target).pos, '마크됨', 'bad');
+                    if (e.ability === 'tempo' && e.target) this.popup(m.piece(e.target).pos, '다음 순서!', 'good');
                     this.bump();
                     await sleep(e.ability === 'trick' ? 250 : 450);
                     break;
@@ -1089,29 +1089,29 @@ export class MatchController {
                 case 'trick':
                     this.setAnim(e.by, 'juggle', 500);
                     if (e.success) this.setAnim(e.on, 'tired', 900);
-                    this.popup(m.piece(e.on).pos, e.success ? 'Fooled!' : 'Not fooled', e.success ? 'good' : 'bad');
+                    this.popup(m.piece(e.on).pos, e.success ? '속았다!' : '안 속았다', e.success ? 'good' : 'bad');
                     this.bump();
                     await sleep(380);
                     break;
                 case 'pressure':
-                    this.popup(m.piece(e.on).pos, 'Pressured', 'bad');
+                    this.popup(m.piece(e.on).pos, '압박당함', 'bad');
                     break;
                 case 'foul':
                     if (e.advantage) {
-                        this.popup(m.piece(e.on).pos, 'Advantage!', 'good');
+                        this.popup(m.piece(e.on).pos, '어드밴티지!', 'good');
                         this.bump();
                         await sleep(500);
                         break;
                     }
                     this.setAnim(e.by, 'slide_tackle', 600);
                     this.setAnim(e.on, 'fall', 1100);
-                    this.popup(m.piece(e.on).pos, e.penalty ? 'PENALTY!' : 'Foul!', 'bad');
+                    this.popup(m.piece(e.on).pos, e.penalty ? '페널티!' : '파울!', 'bad');
                     audio.play('whistle');
                     this.jolt();
                     this.bump();
                     await sleep(e.penalty ? 1100 : 700);
                     if (!e.penalty && m.piece(e.on).status.fouled) {
-                        this.popup(m.piece(e.on).pos, 'Free kick', 'good');
+                        this.popup(m.piece(e.on).pos, '프리킥', 'good');
                         await sleep(500);
                     }
                     break;
@@ -1134,8 +1134,8 @@ export class MatchController {
                     const n = this.cfg.setPieces.placements;
                     const why = setPieceReason(events, events.indexOf(e), m);
                     await this.showBanner(
-                        e.kind === 'corner' ? 'Corner' : 'Free kick',
-                        `${why ? `${why} · ` : ''}${human ? `both sides place up to ${n} players, attackers first` : this.clubName(e.team)}`,
+                        e.kind === 'corner' ? '코너킥' : '프리킥',
+                        `${why ? `${why} · ` : ''}${human ? `양 팀이 최대 ${n}명을 배치합니다(공격 먼저)` : this.clubName(e.team)}`,
                         1600,
                     );
                     this.moveMs.clear();
@@ -1161,16 +1161,16 @@ export class MatchController {
                 }
                 case 'card': {
                     const c = m.piece(e.on);
-                    this.popup(c.pos, e.card === 'red' ? 'RED CARD' : 'Yellow card', e.card === 'red' ? 'red' : 'card');
+                    this.popup(c.pos, e.card === 'red' ? '레드카드' : '옐로카드', e.card === 'red' ? 'red' : 'card');
                     audio.play('card');
                     this.bump();
-                    if (e.card === 'red') await this.showBanner('Sent off', c.player.name, 1400);
+                    if (e.card === 'red') await this.showBanner('퇴장', c.player.name, 1400);
                     else await sleep(600);
                     break;
                 }
                 case 'header':
                     this.setAnim(e.by, 'header', 600);
-                    this.popup(e.at, 'Header!', 'neutral');
+                    this.popup(e.at, '헤딩!', 'neutral');
                     this.bump();
                     await sleep(300);
                     break;
@@ -1185,7 +1185,7 @@ export class MatchController {
                     break;
                 }
                 case 'timeout':
-                    this.popup(m.piece(e.id).pos, 'Too slow!', 'neutral');
+                    this.popup(m.piece(e.id).pos, '너무 느립니다!', 'neutral');
                     this.bump();
                     break;
                 default:
