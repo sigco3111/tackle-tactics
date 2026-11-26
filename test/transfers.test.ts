@@ -53,7 +53,7 @@ describe('transfers', () => {
 
     it('an offer for your player: accepting moves him and the money', () => {
         const cfg = withOverrides({ career: { transfers: { bidChance: 1 } } } as never, defaultConfig);
-        const c = newCareer(cfg, 22, settings);
+        const c = newCareer(cfg, 25, settings);
         // make the clubs above rich enough to bid
         for (const cl of Object.values(c.clubs)) if (cl.id !== c.userClubId) cl.budget = 50_000_000;
         playDays(cfg, c, () => story(c).inbox?.kind === 'transferBid');

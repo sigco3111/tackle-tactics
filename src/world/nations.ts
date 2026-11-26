@@ -7,6 +7,7 @@
  * data small while giving every nation a few hundred surnames and well over 50 towns.
  */
 import type { Rng } from '../rng';
+import { toHangul, type Lang } from './hangul';
 
 export const NATION_IDS = [
     'highmarch',
@@ -25,6 +26,7 @@ export const NATION_IDS = [
     'qasira',
     'kassara',
     'kiyora',
+    'korea',
 ] as const;
 export type NationId = (typeof NATION_IDS)[number];
 export const DEFAULT_NATION: NationId = 'highmarch';
@@ -58,17 +60,24 @@ type Spec = {
     towns: Pool;
     /** Club name patterns; `#` is the town. */
     clubs: readonly string[];
+    /** Pronunciation of the nation's inspiration, for the Hangul rendering (`ko`: already Korean). */
+    lang: Lang | 'ko';
 };
 
-const make = (id: NationId, s: Spec): Nation => ({
-    id,
-    name: s.name,
-    adjective: s.adjective,
-    flag: s.flag,
-    playerName: (rng) => `${draw(rng, s.first)} ${draw(rng, s.last)}`,
-    places: (rng) => [...new Set(every(s.towns))].sort(() => rng() - 0.5),
-    clubName: (rng, place) => rng.pick(s.clubs).replace('#', place),
-});
+const make = (id: NationId, s: Spec): Nation => {
+    const ko = s.lang === 'ko';
+    const hangul = (text: string) => (ko ? text : toHangul(text, s.lang as Lang));
+    return {
+        id,
+        name: hangul(s.name),
+        adjective: hangul(s.adjective),
+        flag: s.flag,
+        // Korean names run family name first, with no space
+        playerName: (rng) => (ko ? `${draw(rng, s.last)}${draw(rng, s.first)}` : hangul(`${draw(rng, s.first)} ${draw(rng, s.last)}`)),
+        places: (rng) => [...new Set(every(s.towns).map(hangul))].sort(() => rng() - 0.5),
+        clubName: (rng, place) => hangul(rng.pick(s.clubs)).replace('#', place),
+    };
+};
 
 // ------------------------------------------------------------------ flags
 // Each flag is modelled on its real-world inspiration, so it reads at a glance even at 18×12px.
@@ -175,6 +184,16 @@ const FLAGS: Record<NationId, string> = {
     kassara: `${dot(C.black, '50% 50%', 9)}, ${h3(C.red, C.gold, C.green)}`,
     // Japan
     kiyora: `${dot('#bc002d', '50% 50%', 30)}, ${C.white}`,
+    // South Korea: a red and blue disc on white, with a trigram in each corner (simplified for 18x12px)
+    korea: [
+        ...(['0 0', '100% 0', '0 100%', '100% 100%'] as const).map(
+            (pos, k) =>
+                `linear-gradient(${k === 1 || k === 2 ? 45 : 135}deg, transparent 18%, ${C.black} 18% 32%, transparent 32% 44%, ${C.black} 44% 58%, transparent 58%) ${pos} / 22% 30% no-repeat`,
+        ),
+        dot('#c8323a', '50% 41%', 13),
+        dot('#1f4fa0', '50% 59%', 13),
+        C.white,
+    ].join(', '),
 };
 
 // ------------------------------------------------------------------ the nations
@@ -183,6 +202,7 @@ const SPECS: Record<NationId, Spec> = {
     // the original fantasy-English pool
     highmarch: {
         name: 'Highmarch',
+        lang: 'en',
         adjective: 'Highmarch',
         flag: FLAGS.highmarch,
         first: glue(
@@ -299,6 +319,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     valdoria: {
         name: 'Valdoria',
+        lang: 'it',
         adjective: 'Valdorian',
         flag: FLAGS.valdoria,
         first: [
@@ -335,6 +356,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     nordhavn: {
         name: 'Nordhavn',
+        lang: 'no',
         adjective: 'Nordhavn',
         flag: FLAGS.nordhavn,
         first: [
@@ -371,6 +393,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     zaravia: {
         name: 'Zaravia',
+        lang: 'sl',
         adjective: 'Zaravian',
         flag: FLAGS.zaravia,
         first: [
@@ -407,6 +430,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     ostmark: {
         name: 'Ostmark',
+        lang: 'de',
         adjective: 'Ostmark',
         flag: FLAGS.ostmark,
         first: [
@@ -443,6 +467,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     gallavre: {
         name: 'Gallavre',
+        lang: 'fr',
         adjective: 'Gallavrian',
         flag: FLAGS.gallavre,
         first: [
@@ -479,6 +504,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     lusmar: {
         name: 'Lusmar',
+        lang: 'pt',
         adjective: 'Lusmarine',
         flag: FLAGS.lusmar,
         first: [
@@ -515,6 +541,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     pampora: {
         name: 'Pampora',
+        lang: 'es',
         adjective: 'Pamporan',
         flag: FLAGS.pampora,
         first: [
@@ -551,6 +578,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     caledra: {
         name: 'Caledra',
+        lang: 'en',
         adjective: 'Caledran',
         flag: FLAGS.caledra,
         first: [
@@ -587,6 +615,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     suvela: {
         name: 'Suvela',
+        lang: 'fi',
         adjective: 'Suvelan',
         flag: FLAGS.suvela,
         first: [
@@ -623,6 +652,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     varhely: {
         name: 'Varhely',
+        lang: 'hu',
         adjective: 'Varhelyi',
         flag: FLAGS.varhely,
         first: [
@@ -659,6 +689,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     thalassa: {
         name: 'Thalassa',
+        lang: 'gr',
         adjective: 'Thalassan',
         flag: FLAGS.thalassa,
         first: [
@@ -695,6 +726,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     anvara: {
         name: 'Anvara',
+        lang: 'tr',
         adjective: 'Anvaran',
         flag: FLAGS.anvara,
         first: [
@@ -731,6 +763,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     qasira: {
         name: 'Qasira',
+        lang: 'ar',
         adjective: 'Qasiri',
         flag: FLAGS.qasira,
         first: [
@@ -790,6 +823,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     kassara: {
         name: 'Kassara',
+        lang: 'af',
         adjective: 'Kassaran',
         flag: FLAGS.kassara,
         first: [
@@ -849,6 +883,7 @@ const SPECS: Record<NationId, Spec> = {
     },
     kiyora: {
         name: 'Kiyora',
+        lang: 'ja',
         adjective: 'Kiyoran',
         flag: FLAGS.kiyora,
         first: [
@@ -883,10 +918,34 @@ const SPECS: Record<NationId, Spec> = {
         ),
         clubs: ['# FC', 'FC #', '# SC', '# Athletic', '# Kestrels', '# Rising'],
     },
+    // South Korea: real towns and counties, invented clubs and players
+    korea: {
+        name: '대한민국',
+        lang: 'ko',
+        adjective: '한국',
+        flag: FLAGS.korea,
+        first: [
+            '도윤', '서준', '시우', '하준', '지호', '준우', '지훈', '민재', '현우', '건우', '태현', '승우', '우진', '예준', '주원',
+            '민준', '지후', '성민', '재윤', '동현', '준혁', '시윤', '유찬', '정우', '은우', '진우', '태민', '승민', '도현', '상현',
+        ],
+        last: ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '황', '안', '송', '류', '전'],
+        towns: [
+            '춘천', '원주', '강릉', '속초', '동해', '삼척', '태백', '홍천', '횡성', '영월', '평창', '정선', '철원', '화천', '양구', '인제', '양양',
+            '청주', '충주', '제천', '보은', '옥천', '영동', '진천', '괴산', '음성', '단양', '천안', '공주', '보령', '아산', '서산', '논산', '당진',
+            '금산', '부여', '서천', '청양', '홍성', '예산', '태안', '전주', '군산', '익산', '정읍', '남원', '김제', '완주', '진안', '무주', '장수',
+            '임실', '순창', '고창', '부안', '목포', '여수', '순천', '나주', '광양', '담양', '곡성', '구례', '고흥', '보성', '화순', '장흥', '강진',
+            '해남', '영암', '무안', '함평', '영광', '장성', '완도', '진도', '신안', '포항', '경주', '김천', '안동', '구미', '영주', '영천', '상주',
+            '문경', '경산', '의성', '청송', '영양', '영덕', '청도', '고령', '성주', '칠곡', '예천', '봉화', '울진', '창원', '진주', '통영', '사천',
+            '김해', '밀양', '거제', '양산', '의령', '함안', '창녕', '남해', '하동', '산청', '함양', '거창', '합천', '제주', '서귀포', '남양주',
+            '가평', '양평', '여주', '이천', '안성', '평택', '파주', '포천', '연천', '동두천', '의정부', '양주', '구리', '하남',
+        ],
+        clubs: ['# 아틀레틱', '# 로버스', '# 레인저스', '# 스포츠클럽', '# 스트라이커스', '# 레이더스', '# 이글스'],
+    },
 };
 
 /** Three-letter code for a town: initials for two-word names ("Cerro Verde" → CVE), else its first letters. */
 export const shortCode = (place: string) => {
+    if (/[가-힣]/.test(place)) return place.replace(/\s+/g, '').slice(0, 2);
     const words = place
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')

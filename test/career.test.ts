@@ -89,7 +89,8 @@ describe('career', () => {
         // six domestic and five international cup dates sit between the 18 league matchdays
         const cupDays = schedule.filter((date) => date.cup).map((date) => date.day);
         expect(cupDays).toHaveLength(c.cup!.rounds.length + c.intl!.rounds.length);
-        expect(c.intl!.rounds.map((r) => r.label)).toEqual(['32강', '16강', '8강', '준결승', '결승']);
+        // 17 nations send two clubs each: 34 clubs, so a preliminary round trims the field to 32
+        expect(c.intl!.rounds.map((r) => r.label)).toEqual(['예선 라운드', '32강', '16강', '8강', '준결승', '결승']);
         expect(new Set(cupDays).size).toBe(cupDays.length);
         expect(cupDays.every((d) => (d - 1) % cfg.career.daysPerMatchday === 0)).toBe(true);
         // the domestic final closes the season

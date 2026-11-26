@@ -15,7 +15,7 @@ describe('nations', () => {
         }
     });
 
-    it('names are printable in the bundled Latin font (no characters outside Latin-1)', () => {
+    it('names are printable: Hangul syllables, Latin-1 club abbreviations and digits only', () => {
         for (const id of NATION_IDS) {
             const rng = createRng(3);
             const n = NATIONS[id];
@@ -24,7 +24,7 @@ describe('nations', () => {
                 ...Array.from({ length: 200 }, () => n.playerName(rng)),
                 ...n.places(rng).map((p) => n.clubName(rng, p)),
             ].join(' ');
-            expect(`${id}: ${text}`).toMatch(/^[a-z]+: [\u0020-\u00ff]*$/);
+            expect(`${id}: ${text}`).toMatch(/^[a-z]+: [\u0020-\u00ff\uac00-\ud7a3]*$/);
         }
     });
 

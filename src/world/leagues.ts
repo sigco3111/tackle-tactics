@@ -136,6 +136,14 @@ const LEAGUES: Record<NationId, Tier[]> = {
         ['Yonbu League', 'Yonbu'],
         ['Chiiki League', 'Chiiki'],
     ],
+    // South Korea
+    korea: [
+        ['슈퍼리그', '슈퍼'],
+        ['챔피언십', '챔피'],
+        ['내셔널리그', '내셔널'],
+        ['지역리그', '지역'],
+        ['아마추어리그', '아마'],
+    ],
 };
 
 /** A division's name in its nation ("Regionalliga"); deeper tiers than listed fall back to numbers. */
