@@ -221,4 +221,4 @@ const word = (raw: string, lang: Lang) => {
 
 /** Transliterate a name (words separated by space or hyphen; digits and abbreviations stay). */
 export const toHangul = (text: string, lang: Lang): string =>
-    text.replace(/[A-Za-zÀ-ÿ']+/g, (w) => (KEEP.has(w) ? w : word(w.replace(/'/g, ''), lang)));
+    text.replace(/[A-Za-zÀ-ÿ']+/g, (w) => (KEEP.has(w) ? w : word(lang === 'ja' ? w.replace(/fu/gi, (m) => (m[0] === 'F' ? 'Hu' : 'hu')) .replace(/'/g, '') : w.replace(/'/g, ''), lang)));
