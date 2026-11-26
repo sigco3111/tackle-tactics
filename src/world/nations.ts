@@ -143,6 +143,21 @@ const C = {
     greekBlue: '#2d63b0',
 };
 
+/** Taegukgi as an SVG background: one taegeuk S-curve and the four trigrams (geon, gam, ri, gon). */
+function koreaFlag(): string {
+    const bar = (y: number, broken: boolean) =>
+        broken
+            ? `<rect x="-3.25" y="${y - 0.6}" width="2.8" height="1.2"/><rect x="0.45" y="${y - 0.6}" width="2.8" height="1.2"/>`
+            : `<rect x="-3.25" y="${y - 0.6}" width="6.5" height="1.2"/>`;
+    const tri = (cx: number, cy: number, rot: number, broken: [boolean, boolean, boolean]) =>
+        `<g transform="translate(${cx} ${cy}) rotate(${rot})">${broken.map((b, k) => bar((k - 1) * 1.85, b)).join('')}</g>`;
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 24" preserveAspectRatio="none"><rect width="36" height="24" fill="#fff"/>` +
+        `<g transform="rotate(-33.69 18 12)"><path d="M12 12A6 6 0 0 1 24 12A3 3 0 0 1 18 12A3 3 0 0 0 12 12Z" fill="#cd2e3a"/><path d="M24 12A6 6 0 0 1 12 12A3 3 0 0 1 18 12A3 3 0 0 0 24 12Z" fill="#0047a0"/></g>` +
+        `<g fill="#000">${tri(7.5, 5, -56.31, [false, false, false])}${tri(28.5, 5, 56.31, [true, false, true])}${tri(7.5, 19, 56.31, [false, true, false])}${tri(28.5, 19, -56.31, [true, true, true])}</g></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}") center / 100% 100% no-repeat, ${C.white}`;
+}
+
 const FLAGS: Record<NationId, string> = {
     // England
     highmarch: centredCross(C.white, C.red),
@@ -184,16 +199,8 @@ const FLAGS: Record<NationId, string> = {
     kassara: `${dot(C.black, '50% 50%', 9)}, ${h3(C.red, C.gold, C.green)}`,
     // Japan
     kiyora: `${dot('#bc002d', '50% 50%', 30)}, ${C.white}`,
-    // South Korea: a red and blue disc on white, with a trigram in each corner (simplified for 18x12px)
-    korea: [
-        ...(['0 0', '100% 0', '0 100%', '100% 100%'] as const).map(
-            (pos, k) =>
-                `linear-gradient(${k === 1 || k === 2 ? 45 : 135}deg, transparent 18%, ${C.black} 18% 32%, transparent 32% 44%, ${C.black} 44% 58%, transparent 58%) ${pos} / 22% 30% no-repeat`,
-        ),
-        dot('#c8323a', '50% 41%', 13),
-        dot('#1f4fa0', '50% 59%', 13),
-        C.white,
-    ].join(', '),
+    // South Korea: drawn as SVG (3:2, taegeuk diameter = half the height, four trigrams on the diagonals)
+    korea: koreaFlag(),
 };
 
 // ------------------------------------------------------------------ the nations
