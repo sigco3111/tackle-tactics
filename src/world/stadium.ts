@@ -31,10 +31,10 @@ export type Conditions = { time: TimeOfDay; weather: Weather };
 
 /** Name suffixes fit the ground: nobody calls a village meadow a "Stadium". */
 const SUFFIX: Record<StadiumSize, string[]> = {
-    village: ['Meadow', 'Green', 'Field', 'Lane', 'Commons', 'Fold', 'Pitch'],
-    town: ['Park', 'Ground', 'Lane', 'Field', 'Road', 'Fold'],
-    city: ['Park', 'Ground', 'Stadium', 'Road', 'Arena'],
-    grand: ['Arena', 'Stadium', 'Bowl', 'Coliseum', 'Park'],
+    village: ['초원구장', '그린구장', '필드', '레인 구장', '공원구장', '폴드 구장', '피치'],
+    town: ['파크', '그라운드', '레인 구장', '필드', '로드 구장', '폴드 구장'],
+    city: ['파크', '그라운드', '스타디움', '로드 구장', '아레나'],
+    grand: ['아레나', '스타디움', '볼 경기장', '콜로세움', '파크'],
 };
 const SIZE_INFO: Record<StadiumSize, { tiers: number; cap: [number, number] }> = {
     village: { tiers: 0, cap: [400, 1500] },
@@ -67,7 +67,7 @@ export const generateStadium = (
     const name =
         nameStyle < 0.7
             ? `${place} ${rng.pick(SUFFIX[size])}`
-            : `The ${rng.pick(['Old', 'New', 'Royal', 'Lower', 'Upper'])} ${rng.pick(SUFFIX[size])}`;
+            : `${rng.pick(['올드', '뉴', '로열', '로어', '어퍼'])} ${rng.pick(SUFFIX[size])}`;
     return {
         name,
         size,
@@ -108,7 +108,7 @@ export const CORNER_FLAGS: Array<Stadium['flag']> = ['red', 'yellow', 'checked']
 export type GroundLook = Pick<Stadium, 'name' | 'pattern' | 'bands' | 'condition' | 'flag'>;
 
 export const defaultGroundLook = (place: string): GroundLook => ({
-    name: `${place} Meadow`,
+    name: `${place} 초원구장`,
     pattern: 'stripes',
     bands: 10,
     condition: 'lush',
@@ -118,7 +118,7 @@ export const defaultGroundLook = (place: string): GroundLook => ({
 /** A ground built to the manager's look: home fans, kept in good nick. */
 export const customStadium = (look: GroundLook, size: StadiumSize, capacity: number): Stadium => ({
     ...look,
-    name: look.name.trim() || 'The Meadow',
+    name: look.name.trim() || '초원구장',
     size,
     capacity,
     fill: 0.6,

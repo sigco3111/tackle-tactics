@@ -8,8 +8,8 @@ import type { TeamSide } from '../types';
 import { sizeLabel, type Conditions, type Stadium } from '../world/stadium';
 
 export const COMMENTATORS = {
-    lead: { name: 'Barnaby Quill', role: '중계' },
-    colour: { name: 'Ottilie Marsh', role: '해설 · 전 골키퍼, A매치 2회, 유명한 부러진 손가락 한 개' },
+    lead: { name: '바너비 퀼', role: '중계' },
+    colour: { name: '오틸리 마시', role: '해설 · 전 골키퍼, A매치 2회, 유명한 부러진 손가락 한 개' },
 };
 
 const pick = <T>(arr: T[], seed: number) => arr[Math.abs(seed) % arr.length]!;

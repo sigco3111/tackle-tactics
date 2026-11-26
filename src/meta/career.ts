@@ -380,7 +380,7 @@ export const newCareer = (
     const size = opts.ground && groundAllowed(cfg, opts.ground.size, startTier) ? opts.ground.size : startingGroundSize(cfg, startTier);
     const place = user.name.split(' ')[0]!;
     const look = opts.ground?.look ?? defaultGroundLook(place);
-    const named = look.name.trim() || `${place} ${({ village: 'Meadow', town: 'Park', city: 'Stadium', grand: 'Arena' } as const)[size]}`;
+    const named = look.name.trim() || `${place} ${({ village: '초원구장', town: '파크', city: '스타디움', grand: '아레나' } as const)[size]}`;
     user.stadium = customStadium({ ...look, name: named }, size, cfg.career.ground[size].capacity);
     c.userClubId = user.id;
     buildSeason(cfg, c, rng, intlQualifiers(cfg, c, false));
