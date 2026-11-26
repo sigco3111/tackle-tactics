@@ -5,7 +5,7 @@
  */
 export type Lang = 'en' | 'es' | 'pt' | 'fr' | 'de' | 'no' | 'sl' | 'fi' | 'hu' | 'gr' | 'tr' | 'ar' | 'af' | 'ja' | 'it';
 
-const INI: Record<string, number> = { g: 0, n: 2, d: 3, r: 5, m: 6, b: 7, s: 9, '': 11, j: 12, ch: 14, k: 15, t: 16, p: 17, h: 18 };
+const INI: Record<string, number> = { ss: 10, g: 0, n: 2, d: 3, r: 5, m: 6, b: 7, s: 9, '': 11, j: 12, ch: 14, k: 15, t: 16, p: 17, h: 18 };
 const MED: Record<string, number> = {
     a: 0, ae: 1, ya: 2, eo: 4, e: 5, ye: 7, o: 8, wa: 9, oe: 11, yo: 12, u: 13, wo: 14, we: 15, wi: 16, yu: 17, eu: 18, i: 20,
 };
@@ -31,6 +31,9 @@ const isV = (ch: string | undefined) => ch !== undefined && VOW.has(ch);
 
 /** Whole words that deserve a fixed rendering. */
 const WORDS: Record<string, string> = {
+    // fixed spellings the sample sheet promised
+    highmarch: '하이마치', marshden: '마슈든', brookwick: '브룩윅', brightwater: '브라이트워터', magnus: '망누스', brandbrink: '브란트브링크',
+    westerdijk: '베스터다이크', delaville: '들라빌',
     saint: '생', san: '산', sao: '상', santa: '산타', santo: '산투', porto: '포르투', rio: '히우', monte: '몬테', villa: '비야', vila: '빌라', ville: '빌',
     real: '레알', sporting: '스포르팅', club: '클루브', deportivo: '데포르티보', atletico: '아틀레티코', independiente: '인데펜디엔테',
     estudiantes: '에스투디안테스', sportivo: '스포르티보', union: '우니온', unione: '우니오네', dynamo: '디나모', lokomotiv: '로코모티프',
@@ -160,7 +163,7 @@ const build = (ph: Ph[], lang: Lang): string => {
             const cc = p.c;
             if (nxt && 'v' in nxt) {
                 // consonant + vowel syllable
-                let ini = P[cc] ?? 'b';
+                let ini = cc === 'ts' && lang === 'ja' ? 'ss' : (P[cc] ?? 'b');
                 let med = nxt.v;
                 if (cc === 'Y') { ini = ''; med = ({ a: 'ya', e: 'ye', o: 'yo', u: 'yu', i: 'i', eu: 'eu', ya: 'ya', ye: 'ye', yo: 'yo', yu: 'yu', wa: 'wa', wo: 'wo', we: 'we', wi: 'wi' } as Record<string, string>)[med] ?? med; }
                 else if (cc === 'W') { ini = ''; med = ({ a: 'wa', e: 'we', i: 'wi', o: 'wo', u: 'u', wo: 'wo' } as Record<string, string>)[med] ?? med; }
@@ -168,6 +171,7 @@ const build = (ph: Ph[], lang: Lang): string => {
                 else if (cc === 'Zh') { ini = 'j'; }
                 else if (cc === 'H') { ini = 'h'; }
                 else if (cc === 'z') { ini = 'j'; }
+                if (ini === 'ss' && med === 'u') med = 'eu';
                 if (med === 'e' && lang !== 'en') med = 'e';
                 if (med === 'o' && lang === 'ja') med = 'o';
                 push(ini, med);

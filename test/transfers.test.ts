@@ -53,10 +53,14 @@ describe('transfers', () => {
 
     it('an offer for your player: accepting moves him and the money', () => {
         const cfg = withOverrides({ career: { transfers: { bidChance: 1 } } } as never, defaultConfig);
-        const c = newCareer(cfg, 25, settings);
+        const c = newCareer(cfg, 22, settings);
         // make the clubs above rich enough to bid
         for (const cl of Object.values(c.clubs)) if (cl.id !== c.userClubId) cl.budget = 50_000_000;
-        playDays(cfg, c, () => story(c).inbox?.kind === 'transferBid');
+        // other letters block the inbox (a bid only arrives when it is empty), so answer them as they come
+        playDays(cfg, c, () => {
+            if (story(c).inbox && story(c).inbox!.kind !== 'transferBid') resolveLetter(cfg, c, 0);
+            return story(c).inbox?.kind === 'transferBid';
+        });
         const bid = story(c).inbox!;
         expect(bid.kind).toBe('transferBid');
         const u = userClub(c);
